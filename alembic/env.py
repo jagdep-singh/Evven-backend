@@ -2,7 +2,7 @@ import os
 from logging.config import fileConfig
 
 from dotenv import load_dotenv  # type: ignore
-from sqlalchemy import ( #type: ignore
+from sqlalchemy import (  # type: ignore
     engine_from_config,  # type: ignore
     pool,  # type: ignore
 )
