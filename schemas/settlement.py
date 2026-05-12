@@ -1,12 +1,13 @@
-from pydantic import BaseModel, EmailStr, Field, datetime
 from uuid import UUID
 from decimal import Decimal
+
+from pydantic import BaseModel, Field #type: ignore
 
 
 class SettlementCreate(BaseModel):
     # group_id : UUID
-    # payer_id : UUID
-    # receiver_id : UUID
+    # payer_id : UUID ...........  these 2 not needed
+    receiver_id : UUID
     amount : Decimal = Field(gt=0)
     
 class SettlementResponse(BaseModel):
@@ -14,16 +15,14 @@ class SettlementResponse(BaseModel):
     group_id : UUID
     payer_id : UUID
     receiver_id : UUID
-    amount : Decimal = Field(gt=0)
+    amount : Decimal
 
 class SettlementUpdate(BaseModel):
-    # Should payer_id,receiver_id and ammount be optional or mendatatory?
-    payer_id : UUID | None = None
-    receiver_id : UUID | None = None
+    # we only need amount and to update reciver we delete the settlement and create new one
     amount : Decimal | None = Field(default=None,gt=0)
     
 class SettlementListResponse(BaseModel):
-    settlements : list [SettlementResponse] | None = None
+    settlements : list[SettlementResponse] = Field(default_factory=list) #this makes frontend easier to handle when there are no settlements, instead of getting null we get empty list
     total_count : int = 0
     
 
