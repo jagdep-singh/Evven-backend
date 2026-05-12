@@ -1,12 +1,14 @@
-import pytest #type: ignore
-from sqlalchemy import text #type: ignore
-from sqlalchemy.ext.asyncio import create_async_engine #type: ignore
+import pytest  # type: ignore
+from sqlalchemy import text  # type: ignore
+from sqlalchemy.ext.asyncio import create_async_engine  # type: ignore
 
 from config import DATABASE_URL
+
 
 def _engine():
     """Fresh engine per test — no shared pool, no cross-loop issues."""
     return create_async_engine(DATABASE_URL, pool_pre_ping=False).begin()
+
 
 @pytest.mark.anyio
 async def test_1_database_connects():
@@ -48,4 +50,3 @@ async def test_5_current_timestamp_returns_value():
     async with _engine() as conn:
         result = await conn.execute(text("SELECT NOW()"))
         assert result.scalar() is not None
-

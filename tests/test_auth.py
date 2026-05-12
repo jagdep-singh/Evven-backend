@@ -1,12 +1,13 @@
-import pytest #type: ignore
 from datetime import timedelta
+
 from services.auth_service import (
-    password_hashing,
-    verify_password,
     create_access_token,
     create_refresh_token,
     decode_token,
+    password_hashing,
+    verify_password,
 )
+
 
 def test_1_password_is_hashed():
     """Hash differs from plaintext."""
@@ -31,6 +32,7 @@ def test_4_same_password_produces_different_hashes():
     h2 = password_hashing("Jazz@123")
     assert h1 != h2
 
+
 def test_5_access_token_roundtrip():
     """Encoded payload survives encode → decode."""
     token = create_access_token({"sub": "user-123"})
@@ -48,7 +50,9 @@ def test_6_access_token_has_exp():
 
 def test_7_expired_access_token_returns_none():
     """Token expired in the past decodes to None."""
-    token = create_access_token({"sub": "user-123"}, expires_delta=timedelta(seconds=-1))
+    token = create_access_token(
+        {"sub": "user-123"}, expires_delta=timedelta(seconds=-1)
+    )
     assert decode_token(token) is None
 
 
@@ -61,6 +65,7 @@ def test_8_tampered_token_returns_none():
 def test_9_garbage_string_returns_none():
     """Completely invalid string decodes to None."""
     assert decode_token("not.a.token") is None
+
 
 def test_10_refresh_token_roundtrip():
     """Refresh token payload survives encode → decode."""
@@ -79,7 +84,9 @@ def test_11_refresh_token_has_exp():
 
 def test_12_expired_refresh_token_returns_none():
     """Expired refresh token decodes to None."""
-    token = create_refresh_token({"sub": "user-456"}, expires_delta=timedelta(seconds=-1))
+    token = create_refresh_token(
+        {"sub": "user-456"}, expires_delta=timedelta(seconds=-1)
+    )
     assert decode_token(token) is None
 
 
