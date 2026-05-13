@@ -13,12 +13,13 @@ from config import (
 )
 from models.user import AuthProvider, User
 from repos.user_repository import UserRepository
-from schemas.user import UserCreate, UserLogin
+from schemas.auth import LoginResponse, RegisterResponse
+from schemas.user import TokenResponse, UserCreate, UserLogin
 
 pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
 
 
-def password_hashing(password: str) -> str:
+def hash_password(password: str) -> str:
     return pwd_context.hash(password)
 
 
@@ -76,14 +77,15 @@ def decode_token(
         return None
 
 
-async def register_user(user_data: UserCreate, db: AsyncSession) -> dict:
+async def register_user(user_data: UserCreate, db: AsyncSession) -> RegisterResponse:
     repo = UserRepository(db)
 
     existing_user = await repo.get_user_by_email(user_data.email)
     if existing_user:
         raise HTTPException(status_code=400, detail="Email already registered")
 
-    hashed_password = password_hashing(user_data.password)
+    hashed_password = hash_password(user_data.password)
+
     new_user = User(
         name=user_data.name,
         email=user_data.email,
@@ -95,18 +97,21 @@ async def register_user(user_data: UserCreate, db: AsyncSession) -> dict:
 
     payload = {"sub": str(created_user.id)}
     access_token = create_access_token(payload)
+
     refresh_token = create_refresh_token(payload)
 
-    return {
-        "message": "User created successfully",
-        "user": created_user,
-        "access_token": access_token,
-        "refresh_token": refresh_token,
-        "token_type": "bearer",
-    }
+    return RegisterResponse(
+        message="User created successfully",
+        user=created_user,
+        tokens=TokenResponse(
+            access_token=access_token,
+            refresh_token=refresh_token,
+            token_type="bearer",
+        ),
+    )
 
 
-async def login_user(login_data: UserLogin, db: AsyncSession) -> dict:
+async def login_user(login_data: UserLogin, db: AsyncSession) -> LoginResponse:
     repo = UserRepository(db)
 
     user = await repo.get_user_by_email(login_data.email)
@@ -118,10 +123,12 @@ async def login_user(login_data: UserLogin, db: AsyncSession) -> dict:
     access_token = create_access_token(payload)
     refresh_token = create_refresh_token(payload)
 
-    return {
-        "message": "Login successful",
-        "user": user,
-        "access_token": access_token,
-        "refresh_token": refresh_token,
-        "token_type": "bearer",
-    }
+    return LoginResponse(
+        message="Login successful",
+        user=user,
+        tokens=TokenResponse(
+            access_token=access_token,
+            refresh_token=refresh_token,
+            token_type="bearer",
+        ),
+    )
