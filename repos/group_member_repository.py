@@ -14,7 +14,7 @@ class GroupMemberRepository:
 
         member = GroupMember(group_id=group_id, user_id=user_id)
 
-        await self.session.add(member)
+        self.session.add(member)
         await self.session.commit()
         await self.session.refresh(member)
 

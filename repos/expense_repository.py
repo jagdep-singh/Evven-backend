@@ -15,23 +15,25 @@ class ExpenseRepository:
 
         expense = GroupExpense(**data)
 
-        await self.session.add(expense)
+        self.session.add(expense)
         await self.session.flush()
 
         for user_id, amount in split.items():
             split = ExpenseSplit(expense_id=expense.id, user_id=user_id, amount=amount)
-            await self.session.add(split)
+            self.session.add(split)
 
         await self.session.commit()
         await self.session.refresh(expense)
 
         return expense
 
-    async def get_by_id(self, expense_id: UUID) -> GroupExpense:
+    async def get_by_id(self, expense_id: UUID) -> GroupExpense | None:
 
-        return await self.session.execute(
+        result = await self.session.execute(
             select(GroupExpense).where(GroupExpense.id == expense_id)
         )
+
+        return result.scalar_one_or_none()
 
     async def list_by_group(self, group_id: UUID) -> list[GroupExpense]:
 
