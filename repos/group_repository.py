@@ -11,10 +11,7 @@ class GroupRepository:
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    async def create(self, data: dict) -> Group:
-
-        group = Group(**data)
-
+    async def create(self, group : Group) -> Group:
         self.session.add(group)
         await self.session.commit()
         await self.session.refresh(group)

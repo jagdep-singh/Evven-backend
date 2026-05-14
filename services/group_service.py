@@ -34,7 +34,7 @@ async def list_groups(db: AsyncSession, user_id: UUID) -> dict:
 
     groups = await repo.get_user_groups(user_id)
 
-    if groups:
+    if not groups:
         raise HTTPException(status_code=404, detail="Group not found")
 
     return {

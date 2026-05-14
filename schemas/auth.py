@@ -14,3 +14,6 @@ class LoginResponse(BaseModel):
     message: str
     user: UserResponse
     tokens: TokenResponse
+
+class RefreshTokenRequest(BaseModel):
+    refresh_token: str

@@ -22,11 +22,13 @@ class GroupMemberRepository:
 
     async def get(self, user_id: UUID, group_id: UUID) -> GroupMember | None:
 
-        return await self.session.execute(
+        result =await self.session.execute(
             select(GroupMember).where(
                 GroupMember.user_id == user_id, GroupMember.group_id == group_id
             )
         )
+        
+        return result.scalar_one_or_none()
 
     async def list_members(self, group_id: UUID) -> list[GroupMember]:
 
