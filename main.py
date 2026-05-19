@@ -22,5 +22,5 @@ def health():
 
 
 @app.get("/")
-def read_root():
+def EvenUp():
     return {"message": "EvenUp"}
