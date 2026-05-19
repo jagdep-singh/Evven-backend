@@ -13,6 +13,10 @@ class GroupUpdate(BaseModel):
     name: Optional[str] = None
 
 
+class AddMember(BaseModel):
+    user_code: str
+
+
 class GroupResponse(BaseModel):
     id: UUID
     name: str

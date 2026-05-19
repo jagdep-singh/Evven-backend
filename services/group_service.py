@@ -6,6 +6,7 @@ from repos.group_repository import GroupRepository
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from models.groups import Group
+from repos.user_repository import UserRepository
 from schemas.common import SuccessResponse
 from schemas.groups import GroupCreate, GroupMemberResponse, GroupResponse, GroupUpdate
 
@@ -104,14 +105,18 @@ async def delete_group(
 
 
 async def add_member(
-    group_id: UUID, user_id: UUID, db: AsyncSession, current_user_id: UUID
+    group_id: UUID, user_code: str, db: AsyncSession, current_user_id: UUID
 ) -> SuccessResponse[GroupMemberResponse]:
     repo = GroupRepository(db)
     member_repo = GroupMemberRepository(db)
+    user_repo = UserRepository(db)
 
     group = await repo.get_by_id(group_id)
     if not group:
         raise HTTPException(status_code=404, detail="Group not found")
+
+    user = await user_repo.get_user_by_user_code(user_code)
+    user_id = user.id
 
     if not await member_repo.is_member(current_user_id, group_id):
         raise HTTPException(status_code=403, detail="Member is not authorised")
@@ -142,6 +147,8 @@ async def remove_member(
 
     if not await member_repo.is_member(current_user_id, group_id):
         raise HTTPException(status_code=403, detail="Member is not authorised")
+
+    # Adding function from balance_repository.py
 
     member = await member_repo.get(user_id, group_id)
     if not member:
