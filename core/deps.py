@@ -2,10 +2,10 @@ from uuid import UUID
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from repos.user_repository import UserRepository
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.database import AsyncSessionLocal
-from repos.user_repository import UserRepository
 from services.auth_service import decode_token
 
 

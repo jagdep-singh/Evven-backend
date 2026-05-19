@@ -3,6 +3,7 @@ from datetime import datetime, timedelta, timezone
 from fastapi import HTTPException  # type: ignore
 from jose import JWTError, jwt  # type: ignore
 from passlib.context import CryptContext  # type: ignore
+from repos.user_repository import UserRepository
 from sqlalchemy.ext.asyncio import AsyncSession  # type: ignore
 
 from core.config import (
@@ -12,7 +13,6 @@ from core.config import (
     SECRET_KEY,
 )
 from models.user import AuthProvider, User
-from repos.user_repository import UserRepository
 from schemas.auth import LoginResponse, RegisterResponse
 from schemas.user import TokenResponse, UserCreate, UserLogin
 from utils.user_utils import generate_user_code
