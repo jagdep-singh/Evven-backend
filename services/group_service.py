@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from Backend.schemas.common import SuccessResponse
+from schemas.common import SuccessResponse
 from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
