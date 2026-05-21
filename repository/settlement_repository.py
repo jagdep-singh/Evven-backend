@@ -48,7 +48,9 @@ class SettlementRepository:
         )
 
         return result.scalars().all()
+    
+    
 
-    # async def get_all_settlement(self) -> list[Settlement]: # for V2
+    # async def get_all_settlement(self) -> list[Settlement]: # for V2 doubtful
 
     # async def get_settlement_between_users(self) -> list[Settlement]: for V2
