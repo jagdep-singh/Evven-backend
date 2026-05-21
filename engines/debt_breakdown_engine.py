@@ -1,4 +1,4 @@
-from collections import defaultdict
+from collections import defaultdict, deque
 from decimal import Decimal
 
 
@@ -44,7 +44,6 @@ def build_debt_breakdown(
         }
     }
     """
-
     breakdown = defaultdict(lambda: defaultdict(list))
 
     for expense in expenses:
@@ -129,6 +128,57 @@ def simplify_debt(aggregated_debt: dict) -> dict:
                 simplified_debt[debtor][creditor] = abs(amount - reverse_amount)
 
     return {debtor: dict(creditors) for debtor, creditors in simplified_debt.items()}
+
+
+def settle_debt(aggregated_debt: dict) -> dict:
+    net_balance = defaultdict(Decimal)
+    for debtor, creditors in aggregated_debt.items():
+        for creditor, amount in creditors.items():
+            amount = Decimal(str(amount))
+            net_balance[debtor] -= amount
+            net_balance[creditor] += amount
+
+    debtors = deque()
+    creditors = deque()
+
+    for user_id, balance in net_balance.items():
+        rounded_balance = balance.quantize(Decimal("0.01"))
+        if rounded_balance < Decimal("0.00"):
+            debtors.append(
+                {
+                    "user_id": user_id,
+                    "amount": abs(rounded_balance),
+                }
+            )
+        elif rounded_balance > Decimal("0.00"):
+            creditors.append(
+                {
+                    "user_id": user_id,
+                    "amount": rounded_balance,
+                }
+            )
+    settled = defaultdict(dict)
+
+    while debtors and creditors:
+        debtor = debtors[0]
+        creditor = creditors[0]
+
+        settlement_amount = min(debtor["amount"], creditor["amount"])
+        settled[debtor["user_id"]][creditor["user_id"]] = settlement_amount
+
+        debtor["amount"] -= settlement_amount
+        creditor["amount"] -= settlement_amount
+
+        debtor["amount"] = debtor["amount"].quantize(Decimal("0.01"))
+        creditor["amount"] = creditor["amount"].quantize(Decimal("0.01"))
+
+        if debtor["amount"] == 0:
+            debtors.popleft()
+
+        if creditor["amount"] == 0:
+            creditors.popleft()
+
+    return {debtor: dict(creditors) for debtor, creditors in settled.items()}
 
 
 def calculate_net_balance(aggregated_debt: dict, user_id: str) -> Decimal:
