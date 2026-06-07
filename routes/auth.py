@@ -93,5 +93,7 @@ async def request_password(email: str, db: AsyncSession = Depends(get_db)):
 
 
 @router.put("/forgot-password")
-async def update_password(token: str, new_password: str, db: AsyncSession = Depends(get_db)):
+async def update_password(
+    token: str, new_password: str, db: AsyncSession = Depends(get_db)
+):
     return await reset_password(token, new_password, db)

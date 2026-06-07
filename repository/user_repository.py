@@ -82,8 +82,11 @@ class AuthRepository:
         reset_record.used = True
         await self.session.commit()
 
-    
     async def delete_token(self, delete_token: str) -> None:
-        result = await self.session.execute(select(PasswordResetToken).where(PasswordResetToken.token_hash == delete_token, PasswordResetToken.used))
+        result = await self.session.execute(
+            select(PasswordResetToken).where(
+                PasswordResetToken.token_hash == delete_token, PasswordResetToken.used
+            )
+        )
         await self.session.delete(result)
         await self.session.commit()

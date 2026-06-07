@@ -2,7 +2,6 @@ import hashlib
 import secrets
 from datetime import datetime, timedelta, timezone
 
-from resend import s
 from fastapi import HTTPException  # type: ignore
 from jose import JWTError, jwt  # type: ignore
 from passlib.context import CryptContext  # type: ignore
@@ -189,4 +188,5 @@ async def send_reset_email(to_email: str, raw_token: str):
     reset_url = f"https://evenup-backend.onrender.com/reset-password?token={raw_token}"
     print(f"[DEV] Send to {to_email}:{reset_url}")
 
-#Created a delete token Function in user_repo and added a template for reset password in main.py
+
+# Created a delete token Function in user_repo and added a template for reset password in main.py
