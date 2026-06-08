@@ -2,7 +2,6 @@ import uuid
 
 from sqlalchemy import TIMESTAMP, Boolean, Column, ForeignKey, String  # type: ignore
 from sqlalchemy.dialects.postgresql import UUID  # type: ignore
-from sqlalchemy.orm import relationship
 
 from core.database import Base
 
@@ -15,6 +14,3 @@ class PasswordResetToken(Base):
     token_hash = Column(String, nullable=False, unique=True)
     expire_at = Column(TIMESTAMP(timezone=True), nullable=False)
     used = Column(Boolean, default=False, nullable=False)
-
-    # relationships
-    user = relationship("User", back_populates="password_reset_tokens")
