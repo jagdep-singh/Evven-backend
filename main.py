@@ -5,6 +5,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from routes.auth import router as auth_router
+from routes.debt_breakdown import router as debt_breakdown_router
 from routes.group_expenses import router as groups_expense_router
 from routes.group_member import router as group_member_router
 from routes.groups import router as groups_router
@@ -57,6 +58,7 @@ app.include_router(users_router)
 app.include_router(groups_router)
 app.include_router(group_member_router)
 app.include_router(groups_expense_router)
+app.include_router(debt_breakdown_router)
 
 
 @app.get("/health")
