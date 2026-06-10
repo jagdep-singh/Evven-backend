@@ -14,6 +14,7 @@ from schemas.personal_expenses import (
 from services.personal_expenses_services import (
     create_personal_expense,
     delete_personal_expense,
+    generate_personal_expense_analytics,
     get_personal_expense,
     list_personal_expenses,
     update_personal_expense,
@@ -69,3 +70,10 @@ async def delete_expense(
     user: User = Depends(get_current_user),
 ):
     return await delete_personal_expense(expense_id, user.id, db)
+
+
+@router.get("/personal-data", response_model=SuccessResponse[dict])
+async def get_personal_data(
+    user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)
+):
+    return await generate_personal_expense_analytics(user.id, db)
