@@ -100,13 +100,13 @@ async def request_password(
     return await request_password_reset(body.email, db)
 
 
+@router.get("/reset-password")
+def reset_password_page(token: str):
+    return FileResponse("templates/password-reset.html")
+
+
 @router.put("/reset-password")
 async def update_password(
     body: ResetPasswordRequest, db: AsyncSession = Depends(get_db)
 ):
     return await reset_password(body.token, body.password, db)
-
-
-@router.get("/reset-password")
-def reset_password_page(token: str):
-    return FileResponse("templates/password-reset.html")
