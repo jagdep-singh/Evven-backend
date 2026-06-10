@@ -1,12 +1,19 @@
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.responses import FileResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.deps import get_current_user, get_db
 from models.user import User
 from repository.user_repository import UserRepository
-from schemas.auth import LoginResponse, RefreshTokenRequest, RegisterResponse
+from schemas.auth import (
+    ForgotPasswordRequest,
+    LoginResponse,
+    RefreshTokenRequest,
+    RegisterResponse,
+    ResetPasswordRequest,
+)
 from schemas.user import TokenResponse, UserCreate, UserLogin, UserResponse
 from services.auth_service import (
     create_access_token,
@@ -14,6 +21,8 @@ from services.auth_service import (
     decode_token,
     login_user,
     register_user,
+    request_password_reset,
+    reset_password,
 )
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
@@ -77,3 +86,28 @@ async def refresh(
 @router.post("/logout", status_code=status.HTTP_200_OK)
 async def logout(user: User = Depends(get_current_user)):
     return {"message": "Logged out successfully"}
+
+
+@router.get("/forgot-password", include_in_schema=False)
+def forget_password():
+    return FileResponse("templates/forget-password.html")
+
+
+@router.post("/forgot-password", status_code=status.HTTP_200_OK)
+async def request_password(
+    body: ForgotPasswordRequest, db: AsyncSession = Depends(get_db)
+):
+    return await request_password_reset(body.email, db)
+
+
+@router.post("/forgot-password")
+async def update_password(
+    body: ResetPasswordRequest, db: AsyncSession = Depends(get_db)
+):
+    return await reset_password(body.token, body.password, db)
+
+
+@router.get("/reset-password")
+def reset_password_page(token: str):
+
+    return FileResponse("templates/password-reset.html")

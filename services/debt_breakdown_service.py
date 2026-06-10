@@ -1,12 +1,18 @@
 from uuid import UUID
 
+from fastapi import HTTPException
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from engines.debt_breakdown_engine import (
     aggregate_debt,
     build_debt_breakdown,
-    settle_debt,
+    settle_debts,
     simplify_debt,
 )
 from repository.expense_repository import ExpenseRepository
+from repository.group_member_repository import GroupMemberRepository
+from repository.group_repository import GroupRepository
+from schemas.common import SuccessResponse
 
 
 class DebtBreakdownService:
@@ -34,7 +40,7 @@ class DebtBreakdownService:
         breakdown = build_debt_breakdown(engine_input)
         aggregated = aggregate_debt(breakdown)
         simplified = simplify_debt(aggregated)
-        settled = settle_debt(simplified)
+        settled = settle_debts(simplified)
 
         return {
             "breakdown": breakdown,
@@ -42,3 +48,26 @@ class DebtBreakdownService:
             "simplified": simplified,
             "settled": settled,
         }
+
+
+async def get_user_debt_breakdown(
+    group_id: UUID, current_user_id: UUID, db: AsyncSession
+):
+    member_repo = GroupMemberRepository(db)
+    group_repo = GroupRepository(db)
+    expense_repo = ExpenseRepository(db)
+
+    if not await member_repo.is_member(current_user_id, group_id):
+        raise HTTPException(status_code=403, detail="Member is not authorised")
+
+    group = await group_repo.get_by_id(group_id)
+    if not group:
+        raise HTTPException(status_code=404, detail="Group not found")
+
+    service = DebtBreakdownService(expense_repo)
+    breakdown = await service.get_group_debt_breakdown(group_id)
+
+    return SuccessResponse(
+        message="User debt breakdown fetched successfully",
+        data=breakdown,
+    )

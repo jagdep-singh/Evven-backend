@@ -14,7 +14,6 @@ class SettlementService:
     async def record_payment(
         self, group_id: UUID, payer_id: UUID, receiver_id: UUID, amount: Decimal
     ) -> Settlement:
-
         if amount <= Decimal("0"):
             raise ValueError("Payment amount must be positive.")
 

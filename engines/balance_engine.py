@@ -29,7 +29,6 @@ def compute_raw_balance(
 def apply_settlements(
     balances: dict[UUID, Decimal], payments_made: list, payments_received: list
 ) -> dict[UUID, Decimal]:
-
     for settlement in payments_made:
         receiver_id = settlement.receiver_id
         balances[receiver_id] = balances.get(receiver_id, Decimal("0")) + Decimal(
