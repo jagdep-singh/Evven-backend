@@ -17,19 +17,16 @@ class PersonalExpenseRepository:
         return expense
 
     async def list_expenses(
-        self,
-        user_id: UUID,
-        skip: int = 0,
-        limit: int = 20,
-    ) -> list[PersonalExpense]:
-        result = await self.session.execute(
-            select(PersonalExpense)
-            .where(PersonalExpense.user_id == user_id)
-            .order_by(PersonalExpense.created_at.desc())
-            .offset(skip)
-            .limit(limit)
-        )
-        return list(result.scalars().all())
+    self,
+    user_id: UUID,
+) -> list[PersonalExpense]:
+     result = await self.session.execute(
+        select(PersonalExpense)
+        .where(PersonalExpense.user_id == user_id)
+        .order_by(PersonalExpense.created_at.desc())
+    )
+    
+     return list(result.scalars().all())
 
     async def get_expense_by_id(
         self,
