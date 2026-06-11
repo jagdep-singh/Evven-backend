@@ -21,6 +21,8 @@ from services.auth_service import (
     decode_token,
     login_user,
     register_user,
+)
+from services.reset_password_service import (
     request_password_reset,
     reset_password,
 )
