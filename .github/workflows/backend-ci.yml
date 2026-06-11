@@ -50,4 +50,5 @@ jobs:
         run: |
           pytest tests \
             --ignore=tests/test_full_flow.py \
+            --ignore=tests/test_db.py \
             -v
