@@ -54,3 +54,22 @@ class ExpenseResponse(BaseModel):
     created_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+class ExpensePaidResponse(BaseModel):
+    id: UUID
+    group_id: UUID
+    paid_by: UUID
+    title: str
+    amount: Decimal
+
+    model_config = {"from_attributes": True}
+
+
+class ExpenseOweResponse(BaseModel):
+    id: UUID
+    expense_id: UUID
+    owed: UUID
+    amount: Decimal
+
+    model_config = {"from_attributes": True}
