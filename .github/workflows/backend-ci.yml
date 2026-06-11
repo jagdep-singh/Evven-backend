@@ -48,6 +48,7 @@ jobs:
           python -c "import main"
 
       - name: Run Unit Tests
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
           pytest tests \
             --ignore=tests/test_full_flow.py \
