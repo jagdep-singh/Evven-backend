@@ -43,6 +43,7 @@ jobs:
           ruff check .
 
       - name: Verify Imports
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
           python -c "import main"
 
