@@ -74,7 +74,7 @@ class ExpenseRepository:
             )
         )
 
-        return result.scalar_one_or_none() is None
+        return result.scalar_one_or_none() is not None
 
     async def get_expense_paid_by_user(
         self, group_id: UUID, user_id: UUID, limit: 20
