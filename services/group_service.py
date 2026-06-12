@@ -115,7 +115,7 @@ async def add_member(
     user = await user_repo.get_user_by_user_code(user_code)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-    
+
     user_id = user.id
 
     if not await member_repo.is_member(current_user_id, group_id):
@@ -152,11 +152,10 @@ async def remove_member(
     member = await member_repo.get_group_member(user_id, group_id)
     if not member:
         raise HTTPException(status_code=404, detail="Member not found")
-    
+
     if await expense_repo.has_pending_balance(group_id, user_id):
         raise HTTPException(
-            status_code=400,
-            detail="User has a pending balance and cannot be removed"
+            status_code=400, detail="User has a pending balance and cannot be removed"
         )
     # Adding function from balance_repository.py
 
