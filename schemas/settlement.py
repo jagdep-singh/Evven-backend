@@ -18,6 +18,8 @@ class SettlementResponse(BaseModel):
     receiver_id: UUID
     amount: Decimal
 
+    model_config = {"from_attributes": True}
+
 
 class SettlementUpdate(BaseModel):
     # we only need amount and to update receiver we delete the settlement and create new one
