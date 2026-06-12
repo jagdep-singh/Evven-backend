@@ -9,10 +9,10 @@ from models.user import User
 from schemas.settlement import SettlementListResponse, SettlementResponse
 from services.settlement_service import list_settlements, record_payment
 
-router = APIRouter(prefix="/groups/{group_id}/settlements", tags=["Settlements"])
+router = APIRouter(prefix="/groups", tags=["Settlements"])
 
 
-@router.get("", response_model=SettlementListResponse)
+@router.get("/{group_id}/settlements", response_model=SettlementListResponse)
 async def get_settlements(
     group_id: UUID,
     user: User = Depends(get_current_user),
@@ -21,7 +21,7 @@ async def get_settlements(
     return await list_settlements(group_id, user.id, db)
 
 
-@router.post("", response_model=SettlementResponse)
+@router.post("/{group_id}/settlements", response_model=SettlementResponse)
 async def create_settlement(
     group_id: UUID,
     receiver_id: UUID,

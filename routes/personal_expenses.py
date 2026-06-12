@@ -44,6 +44,13 @@ async def list_expenses(
     return await list_personal_expenses(db, user.id)
 
 
+@router.get("/personal-data", response_model=SuccessResponse[dict])
+async def get_personal_data(
+    user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)
+):
+    return await generate_personal_expense_analytics(user.id, db)
+
+
 @router.get("/{expense_id}", response_model=SuccessResponse[PersonalExpenseResponse])
 async def get_expense(
     expense_id: UUID,
@@ -70,10 +77,3 @@ async def delete_expense(
     user: User = Depends(get_current_user),
 ):
     return await delete_personal_expense(expense_id, user.id, db)
-
-
-@router.get("/personal-data", response_model=SuccessResponse[dict])
-async def get_personal_data(
-    user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)
-):
-    return await generate_personal_expense_analytics(user.id, db)
