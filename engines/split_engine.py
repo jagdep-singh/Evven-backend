@@ -26,9 +26,24 @@ def calculate_splits(
         else:
             target_ids = all_members_id
 
-        share = round(total_amount / len(target_ids), 2)
+        if not target_ids:
+            raise HTTPException(
+                status_code=400,
+                detail="At least one member is required for equal split",
+            )
 
-        return {uid: share for uid in target_ids}
+        share = (total_amount / len(target_ids)).quantize(Decimal("0.01"))
+
+        result = {uid: share for uid in target_ids}
+
+        total_assigned = sum(result.values())
+        remainder = total_amount - total_assigned
+
+        if remainder != Decimal("0.00"):
+            last_id = target_ids[-1]
+            result[last_id] += remainder
+
+        return result
 
     elif split_type == "exact":
         if not splits_input:
