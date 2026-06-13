@@ -4,6 +4,7 @@ from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from models.groups import Group
+from repository.expense_repository import ExpenseRepository
 from repository.group_member_repository import GroupMemberRepository
 from repository.group_repository import GroupRepository
 from repository.user_repository import UserRepository
@@ -33,7 +34,7 @@ async def list_groups(
     groups = await repo.get_user_groups(user_id)
 
     if not groups:
-        raise HTTPException(status_code=404, detail="Group not found")
+        raise SuccessResponse(message="No groups found", data=[])
 
     return SuccessResponse(
         message="Group fetched successfully",
@@ -112,6 +113,9 @@ async def add_member(
         raise HTTPException(status_code=404, detail="Group not found")
 
     user = await user_repo.get_user_by_user_code(user_code)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
     user_id = user.id
 
     if not await member_repo.is_member(current_user_id, group_id):
@@ -136,6 +140,7 @@ async def remove_member(
 ) -> SuccessResponse[None]:
     repo = GroupRepository(db)
     member_repo = GroupMemberRepository(db)
+    expense_repo = ExpenseRepository(db)
 
     group = await repo.get_by_id(group_id)
     if not group:
@@ -144,11 +149,15 @@ async def remove_member(
     if not await member_repo.is_member(current_user_id, group_id):
         raise HTTPException(status_code=403, detail="Member is not authorised")
 
-    # Adding function from balance_repository.py
-
     member = await member_repo.get_group_member(user_id, group_id)
     if not member:
         raise HTTPException(status_code=404, detail="Member not found")
+
+    if await expense_repo.has_pending_balance(group_id, user_id):
+        raise HTTPException(
+            status_code=400, detail="User has a pending balance and cannot be removed"
+        )
+    # Adding function from balance_repository.py
 
     await member_repo.remove_group_member(member)
 
