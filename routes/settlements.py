@@ -6,13 +6,17 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.deps import get_current_user, get_db
 from models.user import User
+from schemas.common import SuccessResponse
 from schemas.settlement import SettlementListResponse, SettlementResponse
 from services.settlement_service import list_settlements, record_payment
 
 router = APIRouter(prefix="/groups", tags=["Settlements"])
 
 
-@router.get("/{group_id}/settlements", response_model=SettlementListResponse)
+@router.get(
+    "/{group_id}/settlements",
+    response_model=SuccessResponse[SettlementListResponse],
+)
 async def get_settlements(
     group_id: UUID,
     user: User = Depends(get_current_user),
@@ -21,7 +25,10 @@ async def get_settlements(
     return await list_settlements(group_id, user.id, db)
 
 
-@router.post("/{group_id}/settlements", response_model=SettlementResponse)
+@router.post(
+    "/{group_id}/settlements",
+    response_model=SuccessResponse[SettlementResponse],
+)
 async def create_settlement(
     group_id: UUID,
     receiver_id: UUID,
@@ -29,4 +36,8 @@ async def create_settlement(
     payer_id: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    return await record_payment(group_id, payer_id.id, receiver_id, amount, db)
+    settlement = await record_payment(group_id, payer_id.id, receiver_id, amount, db)
+    return SuccessResponse(
+        message="Settlement recorded successfully",
+        data=SettlementResponse.model_validate(settlement),
+    )
