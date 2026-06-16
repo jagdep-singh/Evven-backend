@@ -113,5 +113,5 @@ async def sync_on_expense_updated(
 
 async def sync_on_expense_deleted(expense_id: UUID, db: AsyncSession) -> None:
     sync_repo = SyncRepository(db)
-    rows = await sync_repo.get_synced_by_group_expense(expense_id)
+    rows = await sync_repo.get_sync_group_expenses(expense_id)
     return await sync_repo.bulk_delete_expense(rows)
