@@ -19,6 +19,7 @@ jobs:
       RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
       RESEND_FROM: ${{ secrets.RESEND_FROM }}
       BACKEND_URL: ${{ secrets.BACKEND_URL }}
+      RESET_TOKEN_EXPIRE_MINUTES: ${{ secrets.RESET_TOKEN_EXPIRE_MINUTES }}
 
     strategy:
       matrix:
