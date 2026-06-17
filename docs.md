@@ -1185,6 +1185,7 @@ if await expense_repo.has_pending_balance(group_id, user_id):
 #### BUG-20 · `add_member` does not handle user-not-found gracefully
 
 **File:** `services/group_service.py:add_member`
+
 **Impact:** If `user_repo.get_user_by_user_code(user_code)` returns `None`, the next line `user_id = user.id` raises `AttributeError: 'NoneType' object has no attribute 'id'`, returning an unhandled 500 instead of a clean 404.
 **Fix:**
 ```python
@@ -1301,3 +1302,465 @@ Deactivating an account only sets `is_active = false`. The user remains in all t
 | Personal expense analytics | ❌ Route ordering bug (BUG-06) |
 | Google OAuth | ❌ Not implemented |
 | Expense sync to personal tracker | ❌ Not implemented |
+
+# 9. Fixed Issues
+
+The following issues documented during the backend audit have been resolved.
+
+---
+
+## 🟢 Critical Issues Fixed
+
+### ✅ BUG-01 · Registered Balances Router
+
+**Status:** Fixed
+
+**Issue:**  
+`routes/balances.py` existed but was never registered in the FastAPI application.
+
+**Impact:**  
+`GET /groups/{group_id}/balances` and `GET /groups/{group_id}/balances/{user_id}` returned HTTP 404.
+
+**Resolution:**  
+Registered the balances router in `main.py`.
+
+**Result:**  
+Balance endpoints are now accessible and functioning correctly.
+
+---
+
+### ✅ BUG-02 · Implemented Settlements API Routes
+
+**Status:** Fixed
+
+**Issue:**  
+Settlement functionality existed but was not exposed through any API routes.
+
+**Impact:**  
+Users could not create or retrieve settlements.
+
+**Resolution:**  
+Implemented settlement routes and registered the router.
+
+**Result:**  
+Settlement recording and history retrieval are now available.
+
+---
+
+### ✅ BUG-03 · Fixed Debt Breakdown Endpoint Failure
+
+**Status:** Fixed
+
+**Issue:**  
+Debt breakdown service depended on a repository method that did not exist.
+
+**Impact:**  
+`GET /groups/{group_id}/debt-breakdown` returned HTTP 500.
+
+**Resolution:**  
+Implemented the missing repository method and updated the debt breakdown workflow.
+
+**Result:**  
+Debt breakdown calculations and settlement recommendations work correctly.
+
+---
+
+### ✅ BUG-04 · Fixed Single Expense Retrieval Failure
+
+**Status:** Fixed
+
+**Issue:**  
+Expense response payload was constructed using an invalid Python set.
+
+**Impact:**  
+Expense details endpoint raised runtime exceptions.
+
+**Resolution:**  
+Replaced the invalid response structure with a proper serialized object.
+
+**Result:**  
+Expense details endpoint now returns valid data.
+
+---
+
+### ✅ BUG-05 · Corrected Pending Balance Validation Logic
+
+**Status:** Fixed
+
+**Issue:**  
+Pending balance validation returned the opposite of the intended result.
+
+**Impact:**  
+Outstanding balances were detected incorrectly.
+
+**Resolution:**  
+Corrected validation logic.
+
+**Result:**  
+Pending balances are now detected accurately.
+
+---
+
+### ✅ BUG-06 · Fixed Personal Analytics Route Conflict
+
+**Status:** Fixed
+
+**Issue:**  
+The `/expenses/personal-data` route was shadowed by a dynamic UUID route.
+
+**Impact:**  
+Analytics endpoint was inaccessible.
+
+**Resolution:**  
+Reordered route registration.
+
+**Result:**  
+Personal analytics endpoint is now accessible.
+
+---
+
+### ✅ BUG-07 · Fixed SplitType Enum Mismatch
+
+**Status:** Fixed
+
+**Issue:**  
+Python enum values did not match PostgreSQL enum values.
+
+**Impact:**  
+Expense creation failed with enum validation errors.
+
+**Resolution:**  
+Aligned enum definitions across application and database.
+
+**Result:**  
+Expense records can be stored successfully.
+
+---
+
+### ✅ BUG-08 · Fixed AuthProvider Enum Mismatch
+
+**Status:** Fixed
+
+**Issue:**  
+Authentication provider enum values differed between application and database.
+
+**Impact:**  
+Authentication workflows could fail.
+
+**Resolution:**  
+Standardized enum values.
+
+**Result:**  
+Authentication records are stored consistently.
+
+---
+
+### ✅ BUG-09 · Fixed Role Enum Mismatch
+
+**Status:** Fixed
+
+**Issue:**  
+Role enum values differed between application and database.
+
+**Impact:**  
+Group member creation could fail.
+
+**Resolution:**  
+Aligned enum definitions.
+
+**Result:**  
+Role management works correctly.
+
+---
+
+## 🟠 High Severity Issues Fixed
+
+### ✅ BUG-10 · Fixed Orphaned Expense Splits
+
+**Status:** Fixed
+
+**Issue:**  
+Deleting an expense left orphaned split records.
+
+**Impact:**  
+Balance calculations could become inaccurate.
+
+**Resolution:**  
+Implemented cascading cleanup for expense splits.
+
+**Result:**  
+Related split records are removed automatically.
+
+---
+
+### ✅ BUG-11 · Fixed Empty Group Listing Response
+
+**Status:** Fixed
+
+**Issue:**  
+Users with no groups received HTTP 404.
+
+**Impact:**  
+Frontend applications could not distinguish empty states from errors.
+
+**Resolution:**  
+Returned an empty collection response.
+
+**Result:**  
+New users receive valid responses even without groups.
+
+---
+
+### ✅ BUG-12 · Fixed Expense Split Recalculation
+
+**Status:** Fixed
+
+**Issue:**  
+Updating expense amounts did not update associated splits.
+
+**Impact:**  
+Split data became inconsistent with expense totals.
+
+**Resolution:**  
+Added split recalculation during expense updates.
+
+**Result:**  
+Expense totals and split totals remain synchronized.
+
+---
+
+### ✅ BUG-13 · Added Pending Balance Validation Before Member Removal
+
+**Status:** Fixed
+
+**Issue:**  
+Members with outstanding balances could be removed from groups.
+
+**Impact:**  
+Ghost debts and inaccessible balances could be created.
+
+**Resolution:**  
+Added pending balance validation before removal.
+
+**Result:**  
+Members with unsettled balances cannot be removed.
+
+---
+
+### ✅ BUG-14 · Fixed Password Reset Token Cleanup
+
+**Status:** Fixed
+
+**Issue:**  
+Used password reset tokens remained in the database.
+
+**Impact:**  
+Password reset records accumulated indefinitely.
+
+**Resolution:**  
+Added token cleanup after successful password reset.
+
+**Result:**  
+Used reset tokens are automatically removed.
+
+---
+
+## 🟡 Medium Severity Issues Fixed
+
+### ✅ BUG-16 · Implemented Google Authentication Support
+
+**Status:** Fixed
+
+**Issue:**  
+Google authentication schema existed without a supporting route.
+
+**Impact:**  
+Google sign-in functionality could not be used.
+
+**Resolution:**  
+Implemented Google OAuth authentication workflow and route handling.
+
+**Result:**  
+Users can authenticate using Google accounts.
+
+---
+
+### ✅ BUG-17 · Exposed Aggregate Spending Totals
+
+**Status:** Fixed
+
+**Issue:**  
+Aggregate spending calculations existed but were not accessible through the API.
+
+**Impact:**  
+Clients could not retrieve category-level spending insights.
+
+**Resolution:**  
+Added endpoint support for aggregate spending totals.
+
+**Result:**  
+Spending analytics can now be retrieved through the API.
+
+---
+
+### ✅ BUG-20 · Fixed Invalid User Code Error Handling
+
+**Status:** Fixed
+
+**Issue:**  
+Invalid user codes caused unhandled exceptions.
+
+**Impact:**  
+API returned HTTP 500 instead of a meaningful error.
+
+**Resolution:**  
+Added validation before accessing user information.
+
+**Result:**  
+Invalid user codes now return appropriate API responses.
+
+---
+
+### ✅ BUG-22 · Fixed Password Reset Expiry Inconsistency
+
+**Status:** Fixed
+
+**Issue:**  
+Password reset token expiry time differed from the value shown to users.
+
+**Impact:**  
+Users could be confused when reset links expired unexpectedly.
+
+**Resolution:**  
+Aligned expiry validation and displayed expiry information.
+
+**Result:**  
+Password reset behavior is consistent and predictable.
+
+---
+
+### ✅ BUG-23 · Fixed Equal Split Rounding Error
+
+**Status:** Fixed
+
+**Issue:**  
+Equal split calculations discarded rounding remainders.
+
+**Impact:**  
+Split totals could differ from the original expense amount.
+
+**Resolution:**  
+Distributed rounding remainders during split calculation.
+
+**Result:**  
+Split totals always match the original expense amount.
+
+---
+
+## 🔵 Low Severity Issues Fixed
+
+### ✅ BUG-24 · Implemented Settlement Engine
+
+**Status:** Fixed
+
+**Issue:**  
+`settlement_engine.py` existed only as a placeholder.
+
+**Impact:**  
+Settlement processing logic was not centralized.
+
+**Resolution:**  
+Implemented settlement engine functionality.
+
+**Result:**  
+Settlement calculations are handled through a dedicated engine.
+
+---
+
+### ✅ BUG-25 · Expanded Settlement Update Functionality
+
+**Status:** Fixed
+
+**Issue:**  
+Settlement updates only supported amount changes.
+
+**Impact:**  
+Settlement management required manual recreation.
+
+**Resolution:**  
+Added support for complete settlement management workflows.
+
+**Result:**  
+Settlements can be modified more effectively.
+
+---
+
+### ✅ BUG-26 · Added Group Deletion Dependency Handling
+
+**Status:** Fixed
+
+**Issue:**  
+Foreign key dependencies were not properly handled during group deletion.
+
+**Impact:**  
+Group deletion could fail due to dependent records.
+
+**Resolution:**  
+Implemented dependency cleanup and deletion handling.
+
+**Result:**  
+Groups can be deleted safely.
+
+---
+
+### ✅ BUG-27 · Added Role Information to Member Responses
+
+**Status:** Fixed
+
+**Issue:**  
+Member role information was not exposed through API responses.
+
+**Impact:**  
+Clients could not determine member permissions.
+
+**Resolution:**  
+Included role information in response schemas.
+
+**Result:**  
+Applications can correctly display member roles.
+
+---
+
+### ✅ BUG-28 · Added Test Configuration Support
+
+**Status:** Fixed
+
+**Issue:**  
+The project lacked shared test configuration.
+
+**Impact:**  
+Automated test execution could fail depending on environment setup.
+
+**Resolution:**  
+Added centralized pytest and async test configuration.
+
+**Result:**  
+Tests run consistently across environments.
+
+---
+
+### ✅ BUG-29 · Improved User Deactivation Cleanup
+
+**Status:** Fixed
+
+**Issue:**  
+User deactivation only disabled the account without cleaning related records.
+
+**Impact:**  
+Inactive users remained associated with groups and financial data.
+
+**Resolution:**  
+Implemented cleanup and consistency handling during account deactivation.
+
+**Result:**  
+User deactivation now correctly manages associated records and memberships.    
