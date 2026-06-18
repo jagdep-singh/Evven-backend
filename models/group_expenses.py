@@ -27,7 +27,7 @@ class GroupExpense(Base):
     split_type = Column(
         SQLEnum(SplitType), nullable=False, default=SplitType.EQUAL
     )  # "equal" / "exact" / "percentage"
-    created_at = Column(DateTime, server_default=func.now())
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     # relationships
     group = relationship("Group", back_populates="expenses")
