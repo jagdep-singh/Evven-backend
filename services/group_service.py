@@ -12,6 +12,7 @@ from schemas.common import SuccessResponse
 from schemas.groups import GroupCreate, GroupMemberResponse, GroupResponse, GroupUpdate
 
 
+# private member 
 async def _can_access_group(
     group: Group, user_id: UUID, member_repo: GroupMemberRepository
 ) -> bool:
