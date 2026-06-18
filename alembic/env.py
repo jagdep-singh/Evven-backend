@@ -9,6 +9,7 @@ from sqlalchemy import (  # type: ignore
 
 from alembic import context
 from core.database import Base
+import models
 
 config = context.config
 
