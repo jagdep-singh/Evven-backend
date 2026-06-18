@@ -7,9 +7,9 @@ from sqlalchemy import (  # type: ignore
     pool,  # type: ignore
 )
 
+import models  # noqa: F401
 from alembic import context
 from core.database import Base
-import models
 
 config = context.config
 

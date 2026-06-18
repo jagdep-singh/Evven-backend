@@ -12,7 +12,7 @@ from schemas.common import SuccessResponse
 from schemas.groups import GroupCreate, GroupMemberResponse, GroupResponse, GroupUpdate
 
 
-# private member 
+# private member
 async def _can_access_group(
     group: Group, user_id: UUID, member_repo: GroupMemberRepository
 ) -> bool:
@@ -27,7 +27,7 @@ def _member_response_data(member) -> dict:
         "user_id": member.user_id,
         "joined_at": member.joined_at,
     }
-    #just adding to get the frontend working we can remove it late
+    # just adding to get the frontend working we can remove it late
 
 
 async def create_group(
