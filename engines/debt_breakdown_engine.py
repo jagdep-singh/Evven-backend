@@ -199,3 +199,33 @@ def calculate_net_balance(aggregated_debt: dict, user_id: str) -> Decimal:
             elif creditor == user_id:
                 balance += amount
     return balance
+
+
+def apply_settlements_to_aggregated(aggregated_debt: dict, settlements: list) -> dict:
+    """
+    Reduces aggregated pairwise debts by recorded settlements.
+    A settlement (payer → receiver) reduces payer's debt to receiver.
+    """
+    from collections import defaultdict
+
+    result = defaultdict(dict)
+    for debtor, creditors in aggregated_debt.items():
+        for creditor, amount in creditors.items():
+            result[debtor][creditor] = Decimal(str(amount))
+
+    for s in settlements:
+        payer_id = s.payer_id
+        receiver_id = s.receiver_id
+        amount = Decimal(str(s.amount))
+
+        current = result.get(payer_id, {}).get(receiver_id, Decimal("0"))
+        if current > Decimal("0"):
+            new_amount = max(Decimal("0"), current - amount)
+            if new_amount == Decimal("0"):
+                del result[payer_id][receiver_id]
+                if not result[payer_id]:
+                    del result[payer_id]
+            else:
+                result[payer_id][receiver_id] = new_amount
+
+    return {debtor: dict(creditors) for debtor, creditors in result.items()}

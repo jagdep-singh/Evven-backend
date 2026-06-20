@@ -12,6 +12,7 @@ from engines.debt_breakdown_engine import (
 from repository.expense_repository import ExpenseRepository
 from repository.group_member_repository import GroupMemberRepository
 from repository.group_repository import GroupRepository
+from repository.settlement_repository import SettlementRepository
 from schemas.common import SuccessResponse
 
 
@@ -56,6 +57,7 @@ async def get_user_debt_breakdown(
     member_repo = GroupMemberRepository(db)
     group_repo = GroupRepository(db)
     expense_repo = ExpenseRepository(db)
+    settlement_repo = SettlementRepository(db) 
 
     if not await member_repo.is_member(current_user_id, group_id):
         raise HTTPException(status_code=403, detail="Member is not authorised")
@@ -64,7 +66,7 @@ async def get_user_debt_breakdown(
     if not group:
         raise HTTPException(status_code=404, detail="Group not found")
 
-    service = DebtBreakdownService(expense_repo)
+    service = DebtBreakdownService(expense_repo, settlement_repo)
     breakdown = await service.get_group_debt_breakdown(group_id)
 
     return SuccessResponse(
