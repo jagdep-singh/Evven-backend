@@ -45,7 +45,7 @@ async def create_expenses(
         all_members_id=members_ids,
         split_type=expense_data.split_type,
         splits_input=expense_data.splits_input,
-        equal_member_ids=expense_data.equal_member_ids,
+        equal_member_ids=expense_data.participant_ids,
     )
 
     expense = GroupExpense(
@@ -149,7 +149,7 @@ async def update_expense_by_id(
     members_ids: list[UUID] = [m.user_id for m in members]
     update_data = expense_data.model_dump(
         exclude_unset=True,
-        exclude={"splits_input", "equal_member_ids"},
+        exclude={"splits_input", "participant_ids"},
     )
 
     if expense_data.split_type:
@@ -166,7 +166,7 @@ async def update_expense_by_id(
             all_members_id=members_ids,
             split_type=updated_expense.split_type.value,
             splits_input=expense_data.splits_input,
-            equal_member_ids=expense_data.equal_member_ids,
+            equal_member_ids=expense_data.participant_ids,
         )
         existing_splits = await expense_repo.replace_splits(expense_id, splits_dict)
     else:

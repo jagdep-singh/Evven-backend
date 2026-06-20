@@ -5,7 +5,6 @@ from uuid import UUID
 def compute_personal_records_for_expense(
     expense_id: UUID, group_id: UUID, title: str, paid_by: UUID, splits: list[dict]
 ) -> list[dict]:
-
     records = []
     for split in splits:
         records.append(
@@ -26,7 +25,6 @@ def compute_personal_records_for_expense(
 def diff_personal_records(
     existing: list[dict], desired: list[dict]
 ) -> tuple[list[dict], list[dict], list[dict]]:
-
     existing_by_user: dict[UUID, dict] = {r["user_id"]: r for r in existing}
     desired_by_user: dict[UUID, dict] = {r["user_id"]: r for r in desired}
 

@@ -12,7 +12,7 @@ class ExpenseCreate(BaseModel):
     category: str | None = None
     split_type: str
     splits_input: Optional[dict[UUID, Decimal]] = None
-    equal_member_ids: Optional[list[UUID]] = None
+    participant_ids: Optional[list[UUID]] = None
 
     @model_validator(mode="after")
     def validate_splits(self) -> "ExpenseCreate":
@@ -37,7 +37,7 @@ class ExpenseUpdate(BaseModel):
     category: Optional[str] = None
     split_type: Optional[str] = None
     splits_input: Optional[dict[UUID, Decimal]] = None
-    equal_member_ids: Optional[list[UUID]] = None
+    participant_ids: Optional[list[UUID]] = None
 
     @model_validator(mode="after")
     def validate_splits(self) -> "ExpenseUpdate":
