@@ -27,6 +27,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:8081",
+        "https://localhost:8081",
         "http://localhost:3000",
         "https://localhost:3000",
         "https://evven.xyz",
