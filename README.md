@@ -261,7 +261,7 @@ evenup-api/
 ## Auth
 
 - Access token: short-lived JWT (15 min), sent in `Authorization: Bearer` header
-- Refresh token: long-lived JWT (7 days), stored server-side, rotated on use
+- Refresh token: long-lived JWT (90 days), stored securely by mobile/desktop clients and used only with `/auth/refresh`
 - Logout invalidates the refresh token
 
 ---
@@ -272,7 +272,7 @@ evenup-api/
 DATABASE_URL=postgresql+asyncpg://user:pass@localhost:5432/evenup
 SECRET_KEY=your-secret-key
 ACCESS_TOKEN_EXPIRE_MINUTES=15
-REFRESH_TOKEN_EXPIRE_DAYS=7
+REFRESH_TOKEN_EXPIRE_DAYS=90
 REDIS_URL=redis://localhost:6379
 ```
 

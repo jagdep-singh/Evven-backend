@@ -85,10 +85,10 @@ The API uses two JWTs per session:
 
 | Token | Lifetime | Sent via | Purpose |
 |---|---|---|---|
-| **Access token** | `ACCESS_TOKEN_EXPIRE_MINUTES` (env) | `Authorization: Bearer <token>` | Authenticate every request |
-| **Refresh token** | `REFRESH_TOKEN_EXPIRE_DAYS` (env) | Request body | Obtain a new access token without re-logging in |
+| **Access token** | `ACCESS_TOKEN_EXPIRE_MINUTES` (env) | `Authorization: Bearer <token>` | Authenticate requests |
+| **Refresh token** | `REFRESH_TOKEN_EXPIRE_DAYS` (env) | Request body for `/auth/refresh` | Keep mobile/desktop clients signed in without putting the long-lived token on every API call |
 
-Both tokens carry a `type` claim (`"access"` or `"refresh"`). The `decode_token` function validates the type to prevent using a refresh token as an access token.
+Both tokens carry a `type` claim (`"access"` or `"refresh"`). Protected routes require access tokens. The `/auth/refresh` endpoint requires a refresh token and rejects access tokens.
 
 ### Token Payload
 
