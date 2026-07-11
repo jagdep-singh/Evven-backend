@@ -23,6 +23,7 @@ def _member_response_data(member) -> dict:
     return {
         "id": member.id,
         "name": member.user.name if member.user else str(member.user_id)[:8],
+        "user_code": member.user.user_code if member.user else "",
         "group_id": member.group_id,
         "user_id": member.user_id,
         "joined_at": member.joined_at,

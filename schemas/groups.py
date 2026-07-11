@@ -29,6 +29,7 @@ class GroupResponse(BaseModel):
 class GroupMemberResponse(BaseModel):
     id: UUID
     name: str
+    user_code: str
     group_id: UUID
     user_id: UUID
     joined_at: datetime
