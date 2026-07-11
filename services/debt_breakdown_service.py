@@ -17,7 +17,11 @@ from schemas.common import SuccessResponse
 
 
 class DebtBreakdownService:
-    def __init__(self, expense_repository: ExpenseRepository, settlement_repository: SettlementRepository,):
+    def __init__(
+        self,
+        expense_repository: ExpenseRepository,
+        settlement_repository: SettlementRepository,
+    ):
         self.expense_repository = expense_repository
         self.settlement_repository = settlement_repository
 

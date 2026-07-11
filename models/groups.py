@@ -17,7 +17,7 @@ class Group(Base):
     created_at = Column(DateTime, server_default=func.now())
 
     # relationships
-    creator = relationship("User", back_populates="groups")
+    creator = relationship("User", foreign_keys=[created_by], back_populates="groups")
     members = relationship("GroupMember", back_populates="group")
     expenses = relationship("GroupExpense", back_populates="group")
 
