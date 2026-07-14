@@ -4,17 +4,20 @@ from fastapi import HTTPException  # type: ignore
 from jose import JWTError, jwt  # type: ignore
 from passlib.context import CryptContext  # type: ignore
 from sqlalchemy.ext.asyncio import AsyncSession  # type: ignore
+from google.auth.transport import requests as google_requests
+from google.oauth2 import id_token as google_id_token
 
 from core.config import (
     ACCESS_TOKEN_EXPIRE_MINUTES,
     ALGORITHM,
+    GOOGLE_CLIENT_ID,
     REFRESH_TOKEN_EXPIRE_DAYS,
     SECRET_KEY,
 )
 from models.user import AuthProvider, User
 from repository.user_repository import UserRepository
 from schemas.auth import LoginResponse, RegisterResponse
-from schemas.user import TokenResponse, UserCreate, UserLogin
+from schemas.user import GoogleAuthRequest, TokenResponse, UserCreate, UserLogin
 from utils.user_utils import generate_user_code
 
 pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
@@ -135,6 +138,67 @@ async def login_user(login_data: UserLogin, db: AsyncSession) -> LoginResponse:
 
     return LoginResponse(
         message="Login successful",
+        user=user,
+        tokens=TokenResponse(
+            access_token=access_token,
+            refresh_token=refresh_token,
+            token_type="bearer",
+        ),
+    )
+
+
+async def google_login(auth_data: GoogleAuthRequest, db: AsyncSession) -> LoginResponse:
+
+    repo = UserRepository(db)
+    try:
+        idinfo = google_id_token.verify_oauth2_token(auth_data.token, google_requests.Request(), GOOGLE_CLIENT_ID)
+    except ValueError:
+        raise HTTPException(status_code=401, detail="Invalid Google token")
+    
+    google_id = idinfo["sub"]
+    email = idinfo.get("email")
+    name = idinfo.get("name") or (email.split('@')[0] if email else "User")
+    picture = idinfo.get("picture")
+    
+    if not email:
+        raise HTTPException(status_code=400, detail="Google account has no email")
+    
+    user = await repo.get_user_by_google_id(google_id)
+
+    if not user:
+        existing_email_user = await repo.get_user_by_email(email)
+
+        if existing_email_user:
+            if existing_email_user.auth_provider == AuthProvider.LOCAL:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Email already registered with password login. Please log in with your password instead.",
+                )
+            # Edge case: same email under GOOGLE provider but different google_id somehow
+            user = existing_email_user
+        else:
+            while True:
+                code = generate_user_code()
+                existing = await repo.get_user_by_user_code(code)
+                if not existing:
+                    break
+
+            new_user = User(
+                user_code=code,
+                name=name,
+                email=email,
+                google_id=google_id,
+                auth_provider=AuthProvider.GOOGLE,
+                profile_picture=picture,
+            )
+            user = await repo.create_user(new_user)
+
+    payload = {"sub": str(user.id)}
+    access_token = create_access_token(payload)
+    refresh_token = create_refresh_token(payload)
+
+    return LoginResponse(
+        message="Google login successful",
         user=user,
         tokens=TokenResponse(
             access_token=access_token,
