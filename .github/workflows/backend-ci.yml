@@ -20,6 +20,7 @@ jobs:
       RESEND_FROM: ${{ secrets.RESEND_FROM }}
       BACKEND_URL: ${{ secrets.BACKEND_URL }}
       RESET_TOKEN_EXPIRE_MINUTES: ${{ secrets.RESET_TOKEN_EXPIRE_MINUTES }}
+      GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
 
     strategy:
       matrix:
