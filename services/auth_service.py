@@ -1,11 +1,11 @@
 from datetime import datetime, timedelta, timezone
 
 from fastapi import HTTPException  # type: ignore
+from google.auth.transport import requests as google_requests
+from google.oauth2 import id_token as google_id_token
 from jose import JWTError, jwt  # type: ignore
 from passlib.context import CryptContext  # type: ignore
 from sqlalchemy.ext.asyncio import AsyncSession  # type: ignore
-from google.auth.transport import requests as google_requests
-from google.oauth2 import id_token as google_id_token
 
 from core.config import (
     ACCESS_TOKEN_EXPIRE_MINUTES,
@@ -151,18 +151,20 @@ async def google_login(auth_data: GoogleAuthRequest, db: AsyncSession) -> LoginR
 
     repo = UserRepository(db)
     try:
-        idinfo = google_id_token.verify_oauth2_token(auth_data.token, google_requests.Request(), GOOGLE_CLIENT_ID)
+        idinfo = google_id_token.verify_oauth2_token(
+            auth_data.token, google_requests.Request(), GOOGLE_CLIENT_ID
+        )
     except ValueError:
         raise HTTPException(status_code=401, detail="Invalid Google token")
-    
+
     google_id = idinfo["sub"]
     email = idinfo.get("email")
-    name = idinfo.get("name") or (email.split('@')[0] if email else "User")
+    name = idinfo.get("name") or (email.split("@")[0] if email else "User")
     picture = idinfo.get("picture")
-    
+
     if not email:
         raise HTTPException(status_code=400, detail="Google account has no email")
-    
+
     user = await repo.get_user_by_google_id(google_id)
 
     if not user:

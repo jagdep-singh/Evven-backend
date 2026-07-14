@@ -23,5 +23,5 @@ RESEND_FROM = os.getenv("RESEND_FROM")
 # backed frontend url
 BACKEND_URL = os.getenv("BACKEND_URL")
 
-#GOOGLE client id
+# GOOGLE client id
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")

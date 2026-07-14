@@ -14,7 +14,13 @@ from schemas.auth import (
     RegisterResponse,
     ResetPasswordRequest,
 )
-from schemas.user import GoogleAuthRequest, TokenResponse, UserCreate, UserLogin, UserResponse
+from schemas.user import (
+    GoogleAuthRequest,
+    TokenResponse,
+    UserCreate,
+    UserLogin,
+    UserResponse,
+)
 from services.auth_service import (
     create_access_token,
     create_refresh_token,
@@ -113,6 +119,7 @@ async def update_password(
     body: ResetPasswordRequest, db: AsyncSession = Depends(get_db)
 ):
     return await reset_password(body.token, body.password, db)
+
 
 @router.post("/google", response_model=LoginResponse, status_code=status.HTTP_200_OK)
 async def google_auth(body: GoogleAuthRequest, db: AsyncSession = Depends(get_db)):
