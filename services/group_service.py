@@ -53,7 +53,7 @@ async def list_groups(
     groups = await repo.get_user_groups(user_id)
 
     if not groups:
-        raise SuccessResponse(message="No groups found", data=[])
+        return SuccessResponse(message="No groups found", data=[])
 
     return SuccessResponse(
         message="Group fetched successfully",
