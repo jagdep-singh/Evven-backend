@@ -28,7 +28,7 @@ async def create_personal_expense(
         category=expense_data.category,
         date=expense_data.date,
         notes=expense_data.notes,
-        payment_method=PaymentMethod(expense_data.payment_method.upper())
+        payment_method=PaymentMethod(expense_data.payment_method)
         if expense_data.payment_method
         else None,
     )
@@ -95,7 +95,7 @@ async def update_personal_expense(
     update_data = expense_data.model_dump(exclude_unset=True)
 
     if "payment_method" in update_data and update_data["payment_method"]:
-        update_data["payment_method"] = PaymentMethod(update_data["payment_method"].upper())
+        update_data["payment_method"] = PaymentMethod(update_data["payment_method"])
 
     for field, value in update_data.items():
         setattr(expense, field, value)

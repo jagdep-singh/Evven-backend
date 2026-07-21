@@ -55,7 +55,7 @@ async def create_expenses(
         amount=expense_data.amount,
         split_type=SplitType(expense_data.split_type),
         category=expense_data.category,
-        payment_method=PaymentMethod(expense_data.payment_method.upper())
+        payment_method=PaymentMethod(expense_data.payment_method)
         if expense_data.payment_method
         else None,
     )
@@ -69,6 +69,7 @@ async def create_expenses(
         paid_by=paid_by,
         splits=[{"user_id": uid, "amount": amt} for uid, amt in splits_dict.items()],
         db=db,
+        payment_method=expense_data.payment_method,
     )
 
     return SuccessResponse(
@@ -159,7 +160,7 @@ async def update_expense_by_id(
         update_data["split_type"] = SplitType(expense_data.split_type)
 
     if expense_data.payment_method:
-        update_data["payment_method"] = PaymentMethod(expense_data.payment_method.upper())
+        update_data["payment_method"] = PaymentMethod(expense_data.payment_method)
 
     updated_expense = await expense_repo.update_expense(
         expense,
@@ -185,6 +186,7 @@ async def update_expense_by_id(
         paid_by=updated_expense.paid_by,
         splits=[{"user_id": s.user_id, "amount": s.amount} for s in existing_splits],
         db=db,
+        payment_method=expense_data.payment_method,
     )
 
     return SuccessResponse(

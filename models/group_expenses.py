@@ -17,8 +17,8 @@ class SplitType(Enum):
 
 
 class PaymentMethod(Enum):
-    UPI = "UPI"
-    CASH = "CASH"
+    UPI = "upi"
+    CASH = "cash"
 
 
 class GroupExpense(Base):

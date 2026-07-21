@@ -19,7 +19,10 @@ async def sync_on_expense_created(
     paid_by: UUID,
     splits: list[dict],
     db: AsyncSession,
+    payment_method: str | None = None,
 ) -> list[PersonalExpense]:
+    from models.group_expenses import PaymentMethod
+
     sync_repo = SyncRepository(db)
     desired = compute_personal_records_for_expense(
         expense_id=expense_id,
@@ -29,6 +32,8 @@ async def sync_on_expense_created(
         splits=splits,
     )
 
+    pm = PaymentMethod(payment_method) if payment_method else None
+
     rows = [
         PersonalExpense(
             user_id=record["user_id"],
@@ -36,6 +41,7 @@ async def sync_on_expense_created(
             group_expense_id=record["group_expense_id"],
             title=record["title"],
             amount=record["amount"],
+            payment_method=pm,
         )
         for record in desired
     ]
@@ -50,7 +56,10 @@ async def sync_on_expense_updated(
     paid_by: UUID,
     splits: list[dict],
     db: AsyncSession,
+    payment_method: str | None = None,
 ) -> dict:
+    from models.group_expenses import PaymentMethod
+
     sync_repo = SyncRepository(db)
     personal_repo = PersonalExpenseRepository(db)
     existing_rows = await sync_repo.get_sync_group_expenses(expense_id)
@@ -75,6 +84,7 @@ async def sync_on_expense_updated(
     to_create, to_update, to_delete = diff_personal_records(existing, desired)
 
     if to_create:
+        pm = PaymentMethod(payment_method) if payment_method else None
         new_rows = [
             PersonalExpense(
                 user_id=record["user_id"],
@@ -82,6 +92,7 @@ async def sync_on_expense_updated(
                 group_expense_id=record["group_expense_id"],
                 title=record["title"],
                 amount=record["amount"],
+                payment_method=pm,
             )
             for record in to_create
         ]
