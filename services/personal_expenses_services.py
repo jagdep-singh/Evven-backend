@@ -3,6 +3,7 @@ from uuid import UUID
 from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from models.group_expenses import PaymentMethod
 from models.personal_expenses import PersonalExpense
 from repository.personal_expense_repository import PersonalExpenseRepository
 from schemas.common import SuccessResponse
@@ -11,7 +12,6 @@ from schemas.personal_expenses import (
     PersonalExpenseResponse,
     PersonalExpenseUpdate,
 )
-from models.group_expenses import PaymentMethod
 
 
 async def create_personal_expense(
@@ -28,7 +28,9 @@ async def create_personal_expense(
         category=expense_data.category,
         date=expense_data.date,
         notes=expense_data.notes,
-        payment_method=PaymentMethod(expense_data.payment_method) if expense_data.payment_method else None,
+        payment_method=PaymentMethod(expense_data.payment_method)
+        if expense_data.payment_method
+        else None,
     )
 
     created_expense = await repo.create_expense(expense)
