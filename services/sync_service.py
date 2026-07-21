@@ -32,7 +32,7 @@ async def sync_on_expense_created(
         splits=splits,
     )
 
-    pm = PaymentMethod(payment_method) if payment_method else None
+    pm = PaymentMethod(payment_method.upper()) if payment_method else None
 
     rows = [
         PersonalExpense(
@@ -84,7 +84,7 @@ async def sync_on_expense_updated(
     to_create, to_update, to_delete = diff_personal_records(existing, desired)
 
     if to_create:
-        pm = PaymentMethod(payment_method) if payment_method else None
+        pm = PaymentMethod(payment_method.upper()) if payment_method else None
         new_rows = [
             PersonalExpense(
                 user_id=record["user_id"],
