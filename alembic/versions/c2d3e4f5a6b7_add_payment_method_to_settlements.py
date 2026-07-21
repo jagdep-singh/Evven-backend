@@ -17,7 +17,7 @@ down_revision: Union[str, Sequence[str], None] = 'b1c2d3e4f5a6'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
-paymentmethodenum = sa.Enum('upi', 'cash', name='paymentmethod')
+paymentmethodenum = sa.Enum('UPI', 'CASH', name='paymentmethod')
 
 
 def upgrade() -> None:
