@@ -1,7 +1,8 @@
 from decimal import Decimal
+from typing import Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.deps import get_current_user, get_db
@@ -35,8 +36,11 @@ async def create_settlement(
     amount: Decimal,
     payer_id: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
+    payment_method: Optional[str] = Query(None),
 ):
-    settlement = await record_payment(group_id, payer_id.id, receiver_id, amount, db)
+    settlement = await record_payment(
+        group_id, payer_id.id, receiver_id, amount, db, payment_method
+    )
     return SuccessResponse(
         message="Settlement recorded successfully",
         data=SettlementResponse.model_validate(settlement),

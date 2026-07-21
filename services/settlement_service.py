@@ -4,6 +4,7 @@ from uuid import UUID
 from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from models.group_expenses import PaymentMethod
 from models.settlements import Settlement
 from repository.group_member_repository import GroupMemberRepository
 from repository.group_repository import GroupRepository
@@ -13,7 +14,12 @@ from schemas.settlement import SettlementListResponse, SettlementResponse
 
 
 async def record_payment(
-    group_id: UUID, payer_id: UUID, receiver_id: UUID, amount: Decimal, db: AsyncSession
+    group_id: UUID,
+    payer_id: UUID,
+    receiver_id: UUID,
+    amount: Decimal,
+    db: AsyncSession,
+    payment_method: str | None = None,
 ) -> Settlement:
     settle_repo = SettlementRepository(db)
     group_repo = GroupRepository(db)
@@ -39,6 +45,7 @@ async def record_payment(
         payer_id=payer_id,
         receiver_id=receiver_id,
         amount=amount,
+        payment_method=PaymentMethod(payment_method) if payment_method else None,
     )
     return await settle_repo.add_settlement(settlement)
 

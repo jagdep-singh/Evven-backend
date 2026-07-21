@@ -9,6 +9,7 @@ class SettlementCreate(BaseModel):
     # payer_id : UUID ...........  these 2 not needed
     receiver_id: UUID
     amount: Decimal = Field(gt=0)
+    payment_method: str | None = None
 
 
 class SettlementResponse(BaseModel):
@@ -17,6 +18,7 @@ class SettlementResponse(BaseModel):
     payer_id: UUID
     receiver_id: UUID
     amount: Decimal
+    payment_method: str | None = None
 
     model_config = {"from_attributes": True}
 

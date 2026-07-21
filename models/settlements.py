@@ -1,11 +1,13 @@
 import uuid
 
 from sqlalchemy import Column, DateTime, ForeignKey, Numeric
+from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
 from core.database import Base
+from models.group_expenses import PaymentMethod
 
 
 class Settlement(Base):
@@ -16,6 +18,7 @@ class Settlement(Base):
     payer_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
     receiver_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
     amount = Column(Numeric(10, 2), nullable=False)
+    payment_method = Column(SQLEnum(PaymentMethod), nullable=True)
     created_at = Column(DateTime, server_default=func.now())
 
     # relationships
