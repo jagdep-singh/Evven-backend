@@ -24,6 +24,7 @@ def _member_response_data(member) -> dict:
         "id": member.id,
         "name": member.user.name if member.user else str(member.user_id)[:8],
         "user_code": member.user.user_code if member.user else "",
+        "profile_picture": member.user.profile_picture if member.user else None,
         "group_id": member.group_id,
         "user_id": member.user_id,
         "joined_at": member.joined_at,
