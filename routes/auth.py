@@ -1,12 +1,9 @@
-from uuid import UUID
-
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, status
 from fastapi.responses import FileResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.deps import get_current_user, get_db
 from models.user import User
-from repository.user_repository import UserRepository
 from schemas.auth import (
     ForgotPasswordRequest,
     LoginResponse,
@@ -22,12 +19,11 @@ from schemas.user import (
     UserResponse,
 )
 from services.auth_service import (
-    create_access_token,
-    create_refresh_token,
-    decode_token,
     google_login,
     login_user,
     register_user,
+    revoke_refresh_token,
+    rotate_refresh_token,
 )
 from services.reset_password_service import (
     request_password_reset,
@@ -58,42 +54,16 @@ async def read_current_user(user: User = Depends(get_current_user)):
 async def refresh(
     refresh_data: RefreshTokenRequest, db: AsyncSession = Depends(get_db)
 ):
-    payload = decode_token(refresh_data.refresh_token, expected_type="refresh")
-    if not payload:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid or expired refresh token",
-        )
-
-    user_id = payload.get("sub")
-    if not user_id:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid token payload",
-        )
-
-    repo = UserRepository(db)
-    user = await repo.get_user_by_id(UUID(user_id))
-
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="User not found",
-        )
-
-    new_payload = {"sub": str(user.id)}
-    access_token = create_access_token(new_payload)
-    refresh_token = create_refresh_token(new_payload)
-
-    return TokenResponse(
-        access_token=access_token,
-        refresh_token=refresh_token,
-        token_type="bearer",
-    )
+    return await rotate_refresh_token(refresh_data.refresh_token, db)
 
 
 @router.post("/logout", status_code=status.HTTP_200_OK)
-async def logout(user: User = Depends(get_current_user)):
+async def logout(
+    refresh_data: RefreshTokenRequest,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    await revoke_refresh_token(refresh_data.refresh_token, db, user_id=user.id)
     return {"message": "Logged out successfully"}
 
 

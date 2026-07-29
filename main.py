@@ -34,6 +34,7 @@ app.add_middleware(
         "https://localhost:3000",
         "https://evven.xyz",
         "exp://192.168.0.103:8081",
+        "https://app.evven.xyz",
     ],
     allow_credentials=True,
     allow_methods=["*"],
