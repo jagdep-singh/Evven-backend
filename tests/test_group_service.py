@@ -6,7 +6,11 @@ from services.group_service import _member_response_data
 def test_member_response_includes_user_code():
     member = SimpleNamespace(
         id="member-id",
-        user=SimpleNamespace(name="Jane", user_code="ABC123"),
+        user=SimpleNamespace(
+            name="Jane",
+            user_code="ABC123",
+            profile_picture="https://example.com/jane.png",
+        ),
         group_id="group-id",
         user_id="user-id",
         joined_at="2024-01-01T00:00:00",
@@ -15,3 +19,4 @@ def test_member_response_includes_user_code():
     data = _member_response_data(member)
 
     assert data["user_code"] == "ABC123"
+    assert data["profile_picture"] == "https://example.com/jane.png"
