@@ -216,23 +216,37 @@ async def rotate_refresh_token(raw_refresh_token: str, db: AsyncSession) -> Toke
     )
 
 
-async def revoke_refresh_token(raw_refresh_token: str, db: AsyncSession) -> None:
+async def revoke_refresh_token(
+    raw_refresh_token: str,
+    db: AsyncSession,
+    *,
+    user_id: UUID | None = None,
+) -> None:
     payload = decode_token(raw_refresh_token, expected_type="refresh")
     if not payload:
-        return
+        raise HTTPException(status_code=401, detail="Invalid or expired refresh token")
 
     token_id = payload.get("jti")
     if not token_id:
-        return
+        raise HTTPException(status_code=401, detail="Invalid token payload")
 
     try:
         token_uuid = UUID(token_id)
     except ValueError:
-        return
+        raise HTTPException(status_code=401, detail="Invalid token payload")
 
     refresh_repo = RefreshTokenRepository(db)
     row = await refresh_repo.get_by_id(token_uuid)
-    if row and row.token_hash == hash_refresh_token(raw_refresh_token):
+    if not row:
+        raise HTTPException(status_code=401, detail="Invalid or expired refresh token")
+
+    if user_id is not None and row.user_id != user_id:
+        raise HTTPException(status_code=401, detail="Invalid refresh token")
+
+    if row.token_hash != hash_refresh_token(raw_refresh_token):
+        raise HTTPException(status_code=401, detail="Invalid refresh token")
+
+    if row.revoked_at is None:
         await refresh_repo.revoke(row, utc_now())
 
 

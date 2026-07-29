@@ -190,12 +190,45 @@ async def test_logout_revokes_only_current_session_row(monkeypatch):
     }
     repo = install_fakes(monkeypatch, user, rows)
 
-    await auth_service.revoke_refresh_token(current_raw, db=None)
+    await auth_service.revoke_refresh_token(current_raw, db=None, user_id=user.id)
 
     assert repo.family_revocations == 0
     assert old_row.revoked_at is not None
     assert current_row.revoked_at is not None
     assert sibling_row.revoked_at is None
+
+
+@pytest.mark.anyio
+async def test_logout_rejects_refresh_token_for_different_user(monkeypatch):
+    user = make_user()
+    other_user = make_user()
+    row, raw = make_refresh_row(user)
+    rows = {row.id: row}
+    install_fakes(monkeypatch, user, rows)
+
+    await assert_rejected(
+        auth_service.revoke_refresh_token(raw, db=None, user_id=other_user.id)
+    )
+
+    assert row.revoked_at is None
+
+
+@pytest.mark.anyio
+async def test_logout_rejects_hash_mismatched_refresh_token(monkeypatch):
+    user = make_user()
+    row, original_raw = make_refresh_row(user)
+    tampered_raw = auth_service.create_refresh_token(
+        {"sub": str(user.id), "jti": str(row.id), "nonce": "tampered"}
+    )
+    assert tampered_raw != original_raw
+    rows = {row.id: row}
+    install_fakes(monkeypatch, user, rows)
+
+    await assert_rejected(
+        auth_service.revoke_refresh_token(tampered_raw, db=None, user_id=user.id)
+    )
+
+    assert row.revoked_at is None
 
 
 @pytest.mark.anyio

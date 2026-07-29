@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Body, Depends, status
+from fastapi import APIRouter, Depends, status
 from fastapi.responses import FileResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -59,12 +59,11 @@ async def refresh(
 
 @router.post("/logout", status_code=status.HTTP_200_OK)
 async def logout(
-    refresh_data: RefreshTokenRequest | None = Body(default=None),
+    refresh_data: RefreshTokenRequest,
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    if refresh_data:
-        await revoke_refresh_token(refresh_data.refresh_token, db)
+    await revoke_refresh_token(refresh_data.refresh_token, db, user_id=user.id)
     return {"message": "Logged out successfully"}
 
 
