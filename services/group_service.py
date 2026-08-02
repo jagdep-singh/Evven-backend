@@ -3,6 +3,7 @@ from uuid import UUID
 from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from models.group_members import Role
 from models.groups import Group
 from repository.expense_repository import ExpenseRepository
 from repository.group_member_repository import GroupMemberRepository
@@ -39,7 +40,7 @@ async def create_group(
     member_repo = GroupMemberRepository(db)
     group = Group(name=group_data.name, created_by=user_id)
     created_group = await repo.create(group)
-    await member_repo.add_group_member(user_id, created_group.id)
+    await member_repo.add_group_member(user_id, created_group.id, role=Role.ADMIN)
     return SuccessResponse(
         message="Group created successfully",
         data=GroupResponse.model_validate(created_group),
