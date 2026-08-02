@@ -153,7 +153,9 @@ async def cleanup_old_refresh_tokens(
         pass
 
 
-async def rotate_refresh_token(raw_refresh_token: str, db: AsyncSession) -> TokenResponse:
+async def rotate_refresh_token(
+    raw_refresh_token: str, db: AsyncSession
+) -> TokenResponse:
     payload = decode_token(raw_refresh_token, expected_type="refresh")
     if not payload:
         raise HTTPException(status_code=401, detail="Invalid or expired refresh token")

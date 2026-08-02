@@ -1,17 +1,19 @@
-from enum import Enum
 import uuid
+from enum import Enum
 
 from sqlalchemy import Column, DateTime, ForeignKey, String
-from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy import Enum as SQLEnum
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
 from core.database import Base
 
+
 class GroupType(Enum):
     NORMAL = "NORMAL"
     FRIEND = "FRIEND"
+
 
 class GroupStatus(Enum):
     PENDING = "PENDING"
@@ -37,10 +39,3 @@ class Group(Base):
 
     personal_expenses = relationship("PersonalExpense", back_populates="group")
     settlements = relationship("Settlement", back_populates="group")
-
-    # shadow_group to group
-    friend = relationship(
-        "Friend",
-        back_populates="shadow_group",
-        uselist=False,
-    )

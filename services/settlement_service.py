@@ -45,7 +45,9 @@ async def record_payment(
         payer_id=payer_id,
         receiver_id=receiver_id,
         amount=amount,
-        payment_method=PaymentMethod(payment_method.upper()) if payment_method else None,
+        payment_method=PaymentMethod(payment_method.upper())
+        if payment_method
+        else None,
     )
     return await settle_repo.add_settlement(settlement)
 
