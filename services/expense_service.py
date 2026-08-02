@@ -160,7 +160,9 @@ async def update_expense_by_id(
         update_data["split_type"] = SplitType(expense_data.split_type)
 
     if expense_data.payment_method:
-        update_data["payment_method"] = PaymentMethod(expense_data.payment_method.upper())
+        update_data["payment_method"] = PaymentMethod(
+            expense_data.payment_method.upper()
+        )
 
     updated_expense = await expense_repo.update_expense(
         expense,

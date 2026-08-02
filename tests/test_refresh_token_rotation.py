@@ -126,7 +126,9 @@ async def test_normal_rotation_succeeds_and_revokes_old_jti(monkeypatch):
     install_fakes(monkeypatch, user, rows)
 
     response = await auth_service.rotate_refresh_token(old_raw, db=None)
-    new_payload = auth_service.decode_token(response.refresh_token, expected_type="refresh")
+    new_payload = auth_service.decode_token(
+        response.refresh_token, expected_type="refresh"
+    )
     new_id = UUID(new_payload["jti"])
 
     assert old_row.revoked_at is not None
