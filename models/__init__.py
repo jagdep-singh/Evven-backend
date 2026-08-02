@@ -1,5 +1,4 @@
 from models.expense_splits import ExpenseSplit as ExpenseSplit
-from models.friend import Friend as Friend
 from models.group_expenses import GroupExpense as GroupExpense
 from models.group_members import GroupMember as GroupMember
 from models.groups import Group as Group
