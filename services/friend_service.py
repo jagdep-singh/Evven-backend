@@ -164,9 +164,11 @@ async def list_friends(current_user_id: UUID, db: AsyncSession) -> list[FriendRe
         if not other:
             continue
 
-        balance = await balance_service.get_user_balance_in_group(
+        balances = await balance_service.get_user_balance_in_group(
             user_id=current_user_id, group_id=group.id
         )
+
+        balance = balances.get(other.user_id, Decimal("0"))
 
         result.append(
             FriendResponse(
