@@ -11,8 +11,8 @@ from repository.group_member_repository import GroupMemberRepository
 from repository.group_repository import GroupRepository
 from repository.user_repository import UserRepository
 from schemas.friend import (
-    FirendRequestListResponse,
     FriendDetailResponse,
+    FriendRequestListResponse,
     FriendResponse,
     PendingRequestResponse,
 )
@@ -64,7 +64,7 @@ async def send_friend_request(
 
 async def list_friend_requests(
     current_user_id: UUID, db: AsyncSession
-) -> FirendRequestListResponse:
+) -> FriendRequestListResponse:
     friend_repo = FriendRepository(db)
 
     pending_groups = await friend_repo.list_friend_groups_by_user_and_status(
@@ -98,7 +98,7 @@ async def list_friend_requests(
         else:
             incoming.append(request_data)
 
-    return FirendRequestListResponse(incoming=incoming, outgoing=outgoing)
+    return FriendRequestListResponse(incoming=incoming, outgoing=outgoing)
 
 
 async def accept_friend_request(

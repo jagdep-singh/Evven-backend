@@ -20,7 +20,7 @@ class PendingRequestResponse(BaseModel):
     direction: str  # incoming or outgoing
 
 
-class FirendRequestListResponse(BaseModel):
+class FriendRequestListResponse(BaseModel):
     incoming: list[PendingRequestResponse]
     outgoing: list[PendingRequestResponse]
 

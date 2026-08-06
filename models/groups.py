@@ -28,6 +28,7 @@ class Group(Base):
     name = Column(String, nullable=False)
     created_by = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
     created_at = Column(DateTime, server_default=func.now())
+
     # Friend Feature
     group_type = Column(SQLEnum(GroupType), nullable=False, default=GroupType.NORMAL)
     status = Column(SQLEnum(GroupStatus), nullable=False, default=GroupStatus.ACTIVE)
