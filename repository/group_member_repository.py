@@ -4,15 +4,17 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from models.group_members import GroupMember
+from models.group_members import GroupMember, Role
 
 
 class GroupMemberRepository:
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    async def add_group_member(self, user_id: UUID, group_id: UUID) -> GroupMember:
-        member = GroupMember(group_id=group_id, user_id=user_id)
+    async def add_group_member(
+        self, user_id: UUID, group_id: UUID, role: Role = Role.MEMBER
+    ) -> GroupMember:
+        member = GroupMember(group_id=group_id, user_id=user_id, role=role)
 
         self.session.add(member)
         await self.session.commit()

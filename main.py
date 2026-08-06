@@ -7,6 +7,7 @@ from fastapi.staticfiles import StaticFiles
 from routes.auth import router as auth_router
 from routes.balances import router as balance_router
 from routes.debt_breakdown import router as debt_breakdown_router
+from routes.friends import router as friends_router
 from routes.ghost import router as ghosts_router
 from routes.group_expenses import router as groups_expense_router
 from routes.group_member import router as group_member_router
@@ -72,6 +73,7 @@ app.include_router(debt_breakdown_router)
 app.include_router(balance_router)
 app.include_router(settlement_router)
 app.include_router(ghosts_router)
+app.include_router(friends_router)
 
 
 @app.get("/health")

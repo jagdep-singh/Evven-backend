@@ -5,6 +5,7 @@ from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from models.group_expenses import PaymentMethod
+from models.groups import GroupStatus, GroupType
 from models.settlements import Settlement
 from repository.group_member_repository import GroupMemberRepository
 from repository.group_repository import GroupRepository
@@ -34,6 +35,11 @@ async def record_payment(
     group = await group_repo.get_by_id(group_id)
     if not group:
         raise HTTPException(status_code=404, detail="Group not found")
+    if group.group_type == GroupType.FRIEND and group.status != GroupStatus.ACTIVE:
+        raise HTTPException(
+            status_code=400,
+            detail="Friend relationship is not active; cannot record settlements",
+        )
 
     if amount <= Decimal("0"):
         raise ValueError("Payment amount must be positive.")
@@ -45,7 +51,9 @@ async def record_payment(
         payer_id=payer_id,
         receiver_id=receiver_id,
         amount=amount,
-        payment_method=PaymentMethod(payment_method.upper()) if payment_method else None,
+        payment_method=PaymentMethod(payment_method.upper())
+        if payment_method
+        else None,
     )
     return await settle_repo.add_settlement(settlement)
 

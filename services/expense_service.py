@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from engines.split_engine import calculate_splits
 from models.group_expenses import GroupExpense, PaymentMethod, SplitType
+from models.groups import GroupStatus, GroupType
 from repository.expense_repository import ExpenseRepository
 from repository.group_member_repository import GroupMemberRepository
 from repository.group_repository import GroupRepository
@@ -36,6 +37,11 @@ async def create_expenses(
     group = await group_repo.get_by_id(group_id)
     if not group:
         raise HTTPException(status_code=404, detail="Group not found")
+    if group.group_type == GroupType.FRIEND and group.status != GroupStatus.ACTIVE:
+        raise HTTPException(
+            status_code=400,
+            detail="Friend relationship is not active; cannot create expenses",
+        )
 
     members = await member_repo.list_group_members(group_id)
     members_ids: list[UUID] = [m.user_id for m in members]
@@ -139,6 +145,11 @@ async def update_expense_by_id(
     group = await group_repo.get_by_id(group_id)
     if not group:
         raise HTTPException(status_code=404, detail="Group not found")
+    if group.group_type == GroupType.FRIEND and group.status != GroupStatus.ACTIVE:
+        raise HTTPException(
+            status_code=400,
+            detail="Friend relationship is not active; cannot update expenses",
+        )
 
     expense = await expense_repo.get_by_id(expense_id)
     if not expense:
@@ -160,7 +171,9 @@ async def update_expense_by_id(
         update_data["split_type"] = SplitType(expense_data.split_type)
 
     if expense_data.payment_method:
-        update_data["payment_method"] = PaymentMethod(expense_data.payment_method.upper())
+        update_data["payment_method"] = PaymentMethod(
+            expense_data.payment_method.upper()
+        )
 
     updated_expense = await expense_repo.update_expense(
         expense,
@@ -208,6 +221,11 @@ async def delete_expense_by_id(
     group = await group_repo.get_by_id(group_id)
     if not group:
         raise HTTPException(status_code=404, detail="Group not found")
+    if group.group_type == GroupType.FRIEND and group.status != GroupStatus.ACTIVE:
+        raise HTTPException(
+            status_code=400,
+            detail="Friend relationship is not active; cannot delete expenses",
+        )
 
     expense = await expense_repo.get_by_id(expense_id)
     if not expense:

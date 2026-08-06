@@ -95,7 +95,9 @@ async def update_personal_expense(
     update_data = expense_data.model_dump(exclude_unset=True)
 
     if "payment_method" in update_data and update_data["payment_method"]:
-        update_data["payment_method"] = PaymentMethod(update_data["payment_method"].upper())
+        update_data["payment_method"] = PaymentMethod(
+            update_data["payment_method"].upper()
+        )
 
     for field, value in update_data.items():
         setattr(expense, field, value)
