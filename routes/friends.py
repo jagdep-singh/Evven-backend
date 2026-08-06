@@ -7,9 +7,9 @@ from core.deps import get_current_user, get_db
 from models.user import User
 from schemas.common import SuccessResponse
 from schemas.friend import (
-    FirendRequestListResponse,
     FriendDetailResponse,
     FriendRequestCreate,
+    FriendRequestListResponse,
     FriendResponse,
 )
 from services.friend_service import (
@@ -44,7 +44,7 @@ async def create_friend_request(
     )
 
 
-@router.get("/requests", response_model=SuccessResponse(FirendRequestListResponse))
+@router.get("/requests", response_model=SuccessResponse[FriendRequestListResponse])
 async def get_friends_request(
     user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)
 ):
