@@ -4,7 +4,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from models.group_members import GroupMember
-from models.groups import Group
+from models.groups import Group, GroupType
 
 
 class GroupRepository:
@@ -25,7 +25,9 @@ class GroupRepository:
 
     async def get_user_groups(self, user_id: UUID) -> list[Group]:
         result = await self.session.execute(
-            select(Group).join(GroupMember).where(GroupMember.user_id == user_id)
+            select(Group)
+            .join(GroupMember)
+            .where(GroupMember.user_id == user_id, Group.group_type != GroupType.FRIEND)
         )
 
         return list(result.scalars().all())
