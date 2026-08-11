@@ -4,9 +4,23 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import FileResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from core.config import (
+    FORGOT_PASSWORD_BUCKET_CAPACITY,
+    FORGOT_PASSWORD_REFILL_RATE,
+    RESET_PASSWORD_PAGE_BUCKET_CAPACITY,
+    RESET_PASSWORD_PAGE_REFILL_RATE,
+    RESET_PASSWORD_BUCKET_CAPACITY,
+    RESET_PASSWORD_REFILL_RATE,
+    GOOGLE_AUTH_BUCKET_CAPACITY,
+    GOOGLE_AUTH_REFILL_RATE,
+)
 from core.deps import get_current_user, get_db
+from core.rate_limiter import create_rate_limiter
+
 from models.user import User
+
 from repository.user_repository import UserRepository
+
 from schemas.auth import (
     ForgotPasswordRequest,
     LoginResponse,
@@ -14,6 +28,7 @@ from schemas.auth import (
     RegisterResponse,
     ResetPasswordRequest,
 )
+
 from schemas.user import (
     GoogleAuthRequest,
     TokenResponse,
@@ -21,6 +36,7 @@ from schemas.user import (
     UserLogin,
     UserResponse,
 )
+
 from services.auth_service import (
     create_access_token,
     create_refresh_token,
@@ -29,36 +45,94 @@ from services.auth_service import (
     login_user,
     register_user,
 )
+
 from services.reset_password_service import (
     request_password_reset,
     reset_password,
 )
 
+
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
 
-@router.post(
-    "/register", response_model=RegisterResponse, status_code=status.HTTP_201_CREATED
+# -------------------------------------------------------------------
+# Rate limiters
+# -------------------------------------------------------------------
+
+forgot_password_limiter = create_rate_limiter(
+    capacity=FORGOT_PASSWORD_BUCKET_CAPACITY,
+    refill_rate=FORGOT_PASSWORD_REFILL_RATE,
 )
-async def register(user_data: UserCreate, db: AsyncSession = Depends(get_db)):
+
+reset_password_page_limiter = create_rate_limiter(
+    capacity=RESET_PASSWORD_PAGE_BUCKET_CAPACITY,
+    refill_rate=RESET_PASSWORD_PAGE_REFILL_RATE,
+)
+
+reset_password_limiter = create_rate_limiter(
+    capacity=RESET_PASSWORD_BUCKET_CAPACITY,
+    refill_rate=RESET_PASSWORD_REFILL_RATE,
+)
+
+google_auth_limiter = create_rate_limiter(
+    capacity=GOOGLE_AUTH_BUCKET_CAPACITY,
+    refill_rate=GOOGLE_AUTH_REFILL_RATE,
+)
+
+
+# -------------------------------------------------------------------
+# Authentication
+# -------------------------------------------------------------------
+
+@router.post(
+    "/register",
+    response_model=RegisterResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+async def register(
+        user_data: UserCreate,
+        db: AsyncSession = Depends(get_db),
+):
     return await register_user(user_data, db)
 
 
-@router.post("/login", response_model=LoginResponse, status_code=status.HTTP_200_OK)
-async def login(login_data: UserLogin, db: AsyncSession = Depends(get_db)):
+@router.post(
+    "/login",
+    response_model=LoginResponse,
+    status_code=status.HTTP_200_OK,
+)
+async def login(
+        login_data: UserLogin,
+        db: AsyncSession = Depends(get_db),
+):
     return await login_user(login_data, db)
 
 
-@router.get("/me", response_model=UserResponse, status_code=status.HTTP_200_OK)
-async def read_current_user(user: User = Depends(get_current_user)):
+@router.get(
+    "/me",
+    response_model=UserResponse,
+    status_code=status.HTTP_200_OK,
+)
+async def read_current_user(
+        user: User = Depends(get_current_user),
+):
     return user
 
 
-@router.post("/refresh", response_model=TokenResponse, status_code=status.HTTP_200_OK)
+@router.post(
+    "/refresh",
+    response_model=TokenResponse,
+    status_code=status.HTTP_200_OK,
+)
 async def refresh(
-    refresh_data: RefreshTokenRequest, db: AsyncSession = Depends(get_db)
+        refresh_data: RefreshTokenRequest,
+        db: AsyncSession = Depends(get_db),
 ):
-    payload = decode_token(refresh_data.refresh_token, expected_type="refresh")
+    payload = decode_token(
+        refresh_data.refresh_token,
+        expected_type="refresh",
+    )
+
     if not payload:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -66,6 +140,7 @@ async def refresh(
         )
 
     user_id = payload.get("sub")
+
     if not user_id:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -73,6 +148,7 @@ async def refresh(
         )
 
     repo = UserRepository(db)
+
     user = await repo.get_user_by_id(UUID(user_id))
 
     if not user:
@@ -82,6 +158,7 @@ async def refresh(
         )
 
     new_payload = {"sub": str(user.id)}
+
     access_token = create_access_token(new_payload)
     refresh_token = create_refresh_token(new_payload)
 
@@ -92,35 +169,77 @@ async def refresh(
     )
 
 
-@router.post("/logout", status_code=status.HTTP_200_OK)
-async def logout(user: User = Depends(get_current_user)):
+@router.post(
+    "/logout",
+    status_code=status.HTTP_200_OK,
+)
+async def logout(
+        user: User = Depends(get_current_user),
+):
     return {"message": "Logged out successfully"}
 
 
-@router.get("/forgot-password", include_in_schema=False)
+# -------------------------------------------------------------------
+# Forgot password
+# -------------------------------------------------------------------
+
+@router.get(
+    "/forgot-password",
+    include_in_schema=False,
+)
 def forget_password():
     return FileResponse("templates/forget-password.html")
 
 
-@router.post("/forgot-password", status_code=status.HTTP_200_OK)
+@router.post(
+    "/forgot-password",
+    status_code=status.HTTP_200_OK,
+)
 async def request_password(
-    body: ForgotPasswordRequest, db: AsyncSession = Depends(get_db)
+        body: ForgotPasswordRequest,
+        db: AsyncSession = Depends(get_db),
+        _: None = Depends(forgot_password_limiter),
 ):
     return await request_password_reset(body.email, db)
 
 
+# -------------------------------------------------------------------
+# Reset password
+# -------------------------------------------------------------------
+
 @router.get("/reset-password")
-def reset_password_page(token: str):
+def reset_password_page(
+        token: str,
+        _: None = Depends(reset_password_page_limiter),
+):
     return FileResponse("templates/password-reset.html")
 
 
 @router.put("/reset-password")
 async def update_password(
-    body: ResetPasswordRequest, db: AsyncSession = Depends(get_db)
+        body: ResetPasswordRequest,
+        db: AsyncSession = Depends(get_db),
+        _: None = Depends(reset_password_limiter),
 ):
-    return await reset_password(body.token, body.password, db)
+    return await reset_password(
+        body.token,
+        body.password,
+        db,
+    )
 
 
-@router.post("/google", response_model=LoginResponse, status_code=status.HTTP_200_OK)
-async def google_auth(body: GoogleAuthRequest, db: AsyncSession = Depends(get_db)):
+# -------------------------------------------------------------------
+# Google authentication
+# -------------------------------------------------------------------
+
+@router.post(
+    "/google",
+    response_model=LoginResponse,
+    status_code=status.HTTP_200_OK,
+)
+async def google_auth(
+        body: GoogleAuthRequest,
+        db: AsyncSession = Depends(get_db),
+        _: None = Depends(google_auth_limiter),
+):
     return await google_login(body, db)
