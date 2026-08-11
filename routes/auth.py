@@ -5,18 +5,17 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from core.config import (
     FORGOT_PASSWORD_BUCKET_CAPACITY,
     FORGOT_PASSWORD_REFILL_RATE,
-    RESET_PASSWORD_PAGE_BUCKET_CAPACITY,
-    RESET_PASSWORD_PAGE_REFILL_RATE,
-    RESET_PASSWORD_BUCKET_CAPACITY,
-    RESET_PASSWORD_REFILL_RATE,
     GOOGLE_AUTH_BUCKET_CAPACITY,
     GOOGLE_AUTH_REFILL_RATE,
+    RESET_PASSWORD_BUCKET_CAPACITY,
+    RESET_PASSWORD_PAGE_BUCKET_CAPACITY,
+    RESET_PASSWORD_PAGE_REFILL_RATE,
+    RESET_PASSWORD_REFILL_RATE,
 )
 from core.deps import get_current_user, get_db
 from core.rate_limiter import create_rate_limiter
 
 from models.user import User
-
 
 from schemas.auth import (
     ForgotPasswordRequest,
@@ -124,16 +123,27 @@ async def refresh(
         refresh_data: RefreshTokenRequest,
         db: AsyncSession = Depends(get_db),
 ):
-    return await rotate_refresh_token(refresh_data.refresh_token, db)
+    return await rotate_refresh_token(
+        refresh_data.refresh_token,
+        db,
+    )
 
 
-@router.post("/logout", status_code=status.HTTP_200_OK)
+@router.post(
+    "/logout",
+    status_code=status.HTTP_200_OK,
+)
 async def logout(
-    refresh_data: RefreshTokenRequest,
-    user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
+        refresh_data: RefreshTokenRequest,
+        user: User = Depends(get_current_user),
+        db: AsyncSession = Depends(get_db),
 ):
-    await revoke_refresh_token(refresh_data.refresh_token, db, user_id=user.id)
+    await revoke_refresh_token(
+        refresh_data.refresh_token,
+        db,
+        user_id=user.id,
+    )
+
     return {"message": "Logged out successfully"}
 
 
@@ -158,7 +168,10 @@ async def request_password(
         db: AsyncSession = Depends(get_db),
         _: None = Depends(forgot_password_limiter),
 ):
-    return await request_password_reset(body.email, db)
+    return await request_password_reset(
+        body.email,
+        db,
+    )
 
 
 # -------------------------------------------------------------------
@@ -200,4 +213,7 @@ async def google_auth(
         db: AsyncSession = Depends(get_db),
         _: None = Depends(google_auth_limiter),
 ):
-    return await google_login(body, db)
+    return await google_login(
+        body,
+        db,
+    )
