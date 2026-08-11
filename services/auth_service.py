@@ -30,7 +30,6 @@ from repository.user_repository import UserRepository
 from schemas.auth import (
     LoginResponse,
     RegisterResponse,
-    SendOtpResponse,
     VerifyOtpResponse,
 )
 from schemas.user import GoogleAuthRequest, TokenResponse, UserCreate, UserLogin

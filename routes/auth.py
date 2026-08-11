@@ -26,10 +26,10 @@ from services.auth_service import (
     google_login,
     login_user,
     register_user,
-    send_otp_for_signup,
     resend_verification_code,
     revoke_refresh_token,
     rotate_refresh_token,
+    send_otp_for_signup,
     verify_otp,
 )
 from services.reset_password_service import (
@@ -52,7 +52,9 @@ async def login(login_data: UserLogin, db: AsyncSession = Depends(get_db)):
     return await login_user(login_data, db)
 
 
-@router.post("/send-otp", response_model=SendOtpResponse, status_code=status.HTTP_200_OK)
+@router.post(
+    "/send-otp", response_model=SendOtpResponse, status_code=status.HTTP_200_OK
+)
 async def send_otp(body: SendOtpRequest, db: AsyncSession = Depends(get_db)):
     if body.purpose == "signup":
         return await send_otp_for_signup(body.email, db)
