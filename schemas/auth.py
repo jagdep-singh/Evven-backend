@@ -6,7 +6,8 @@ from schemas.user import TokenResponse, UserResponse
 class RegisterResponse(BaseModel):
     message: str
     user: UserResponse
-    tokens: TokenResponse | None = None
+    # Tokens should not be send in RegisterResponse
+    # tokens: TokenResponse | None = None
 
 
 class LoginResponse(BaseModel):
