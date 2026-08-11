@@ -14,9 +14,7 @@ from core.config import (
 )
 from core.deps import get_current_user, get_db
 from core.rate_limiter import create_rate_limiter
-
 from models.user import User
-
 from schemas.auth import (
     ForgotPasswordRequest,
     LoginResponse,
@@ -24,7 +22,6 @@ from schemas.auth import (
     RegisterResponse,
     ResetPasswordRequest,
 )
-
 from schemas.user import (
     GoogleAuthRequest,
     TokenResponse,
@@ -32,7 +29,6 @@ from schemas.user import (
     UserLogin,
     UserResponse,
 )
-
 from services.auth_service import (
     google_login,
     login_user,
@@ -40,12 +36,10 @@ from services.auth_service import (
     revoke_refresh_token,
     rotate_refresh_token,
 )
-
 from services.reset_password_service import (
     request_password_reset,
     reset_password,
 )
-
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
