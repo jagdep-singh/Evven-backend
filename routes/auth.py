@@ -10,6 +10,8 @@ from schemas.auth import (
     RefreshTokenRequest,
     RegisterResponse,
     ResetPasswordRequest,
+    SendOtpRequest,
+    VerifyOtpRequest,
 )
 from schemas.user import (
     GoogleAuthRequest,
@@ -24,6 +26,8 @@ from services.auth_service import (
     register_user,
     revoke_refresh_token,
     rotate_refresh_token,
+    resend_verification_code,
+    verify_otp,
 )
 from services.reset_password_service import (
     request_password_reset,
@@ -43,6 +47,16 @@ async def register(user_data: UserCreate, db: AsyncSession = Depends(get_db)):
 @router.post("/login", response_model=LoginResponse, status_code=status.HTTP_200_OK)
 async def login(login_data: UserLogin, db: AsyncSession = Depends(get_db)):
     return await login_user(login_data, db)
+
+
+@router.post("/send-otp", status_code=status.HTTP_200_OK)
+async def send_otp(body: SendOtpRequest, db: AsyncSession = Depends(get_db)):
+    return await resend_verification_code(body.email, db)
+
+
+@router.post("/verify-otp", response_model=LoginResponse, status_code=status.HTTP_200_OK)
+async def verify_email(body: VerifyOtpRequest, db: AsyncSession = Depends(get_db)):
+    return await verify_otp(body.email, body.otp, db)
 
 
 @router.get("/me", response_model=UserResponse, status_code=status.HTTP_200_OK)

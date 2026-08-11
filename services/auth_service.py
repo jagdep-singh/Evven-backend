@@ -1,8 +1,11 @@
 import hashlib
 import random
+import secrets
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 from uuid import UUID, uuid4
 
+import resend
 from fastapi import HTTPException  # type: ignore
 from google.auth.transport import requests as google_requests
 from google.oauth2 import id_token as google_id_token
@@ -14,10 +17,14 @@ from core.config import (
     ACCESS_TOKEN_EXPIRE_MINUTES,
     ALGORITHM,
     GOOGLE_CLIENT_ID,
+    RESET_TOKEN_EXPIRE_MINUTES,
     REFRESH_TOKEN_EXPIRE_DAYS,
+    RESEND_API_KEY,
+    RESEND_FROM,
     SECRET_KEY,
 )
 from models.user import AuthProvider, User
+from repository.email_verification_repository import EmailVerificationRepository
 from repository.refresh_token_repository import RefreshTokenRepository
 from repository.user_repository import UserRepository
 from schemas.auth import LoginResponse, RegisterResponse
@@ -25,6 +32,7 @@ from schemas.user import GoogleAuthRequest, TokenResponse, UserCreate, UserLogin
 from utils.user_utils import generate_user_code
 
 pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
+resend.api_key = RESEND_API_KEY
 
 
 def hash_password(password: str) -> str:
@@ -254,6 +262,7 @@ async def revoke_refresh_token(
 
 async def register_user(user_data: UserCreate, db: AsyncSession) -> RegisterResponse:
     repo = UserRepository(db)
+    verification_repo = EmailVerificationRepository(db)
 
     existing_user = await repo.get_user_by_email(user_data.email)
     if existing_user:
@@ -275,14 +284,23 @@ async def register_user(user_data: UserCreate, db: AsyncSession) -> RegisterResp
         email=user_data.email,
         password_hash=hashed_password,
         auth_provider=AuthProvider.LOCAL,
+        is_verified=False,
     )
 
     created_user = await repo.create_user(new_user)
 
+    token = await create_and_send_verification_code(user=created_user, repo=verification_repo)
+
+    if not token:
+        await repo.delete_user(created_user)
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to send verification email",
+        )
+
     return RegisterResponse(
-        message="User created successfully",
+        message="User created successfully. Check your email for the verification code.",
         user=created_user,
-        tokens=await issue_token_pair(created_user, db),
     )
 
 
@@ -292,6 +310,12 @@ async def login_user(login_data: UserLogin, db: AsyncSession) -> LoginResponse:
     user = await repo.get_user_by_email(login_data.email)
     if not user or not verify_password(login_data.password, user.password_hash):
         raise HTTPException(status_code=401, detail="Invalid email or password")
+
+    if not user.is_verified:
+        raise HTTPException(
+            status_code=403,
+            detail="Please verify your email before logging in.",
+        )
 
     return LoginResponse(
         message="Login successful",
@@ -350,6 +374,109 @@ async def google_login(auth_data: GoogleAuthRequest, db: AsyncSession) -> LoginR
 
     return LoginResponse(
         message="Google login successful",
+        user=user,
+        tokens=await issue_token_pair(user, db),
+    )
+
+
+def _generate_verification_otp() -> str:
+    return f"{secrets.randbelow(1_000_000):06d}"
+
+
+def _hash_verification_otp(otp: str) -> str:
+    return hashlib.sha256(otp.encode("utf-8")).hexdigest()
+
+
+async def send_verification_email(to_email: str, otp: str, name: str) -> bool:
+    html_content = (
+        Path("templates/email/email-verification-otp.html")
+        .read_text(encoding="utf-8")
+        .replace("__USER_NAME__", name)
+        .replace("__OTP_CODE__", otp)
+        .replace("__EXPIRY_MINUTES__", str(RESET_TOKEN_EXPIRE_MINUTES))
+    )
+
+    try:
+        resend.Emails.send(
+            {
+                "from": f"Evven <{RESEND_FROM}>",
+                "to": [to_email],
+                "subject": "Verify your Evven email",
+                "html": html_content,
+            }
+        )
+        return True
+    except Exception as exc:
+        print(f"[send_verification_email] failed for {to_email}: {exc}")
+        return False
+
+
+async def create_and_send_verification_code(
+    *,
+    user: User,
+    repo: EmailVerificationRepository,
+) -> str | None:
+    otp = _generate_verification_otp()
+    token = await repo.create_token(
+        user_id=user.id,
+        token_hash=_hash_verification_otp(otp),
+        expires_at=utc_now() + timedelta(minutes=RESET_TOKEN_EXPIRE_MINUTES),
+    )
+
+    sent = await send_verification_email(user.email, otp, user.name)
+    if not sent:
+        await repo.delete_token(token)
+        return None
+
+    return otp
+
+
+async def resend_verification_code(
+    email: str, db: AsyncSession
+) -> dict[str, str]:
+    repo = UserRepository(db)
+    verification_repo = EmailVerificationRepository(db)
+
+    user = await repo.get_user_by_email(email)
+    if not user:
+        raise HTTPException(status_code=404, detail="No account found with that email")
+
+    if user.is_verified:
+        raise HTTPException(status_code=400, detail="Account is already verified")
+
+    otp = await create_and_send_verification_code(user=user, repo=verification_repo)
+
+    if not otp:
+        raise HTTPException(status_code=500, detail="Failed to send verification email")
+
+    return {"message": "Verification code sent"}
+
+
+async def verify_otp(
+    email: str,
+    otp: str,
+    db: AsyncSession,
+) -> LoginResponse:
+    repo = UserRepository(db)
+    verification_repo = EmailVerificationRepository(db)
+
+    user = await repo.get_user_by_email(email)
+    if not user:
+        raise HTTPException(status_code=404, detail="No account found with that email")
+
+    if user.is_verified:
+        raise HTTPException(status_code=400, detail="Account is already verified")
+
+    token = await verification_repo.get_latest_valid_token(user.id)
+    if not token or token.token_hash != _hash_verification_otp(otp):
+        raise HTTPException(status_code=400, detail="Invalid or expired verification code")
+
+    user.is_verified = True
+    await repo.update_user(user)
+    await verification_repo.mark_token_as_used(token)
+
+    return LoginResponse(
+        message="Email verified successfully",
         user=user,
         tokens=await issue_token_pair(user, db),
     )

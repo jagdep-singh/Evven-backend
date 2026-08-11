@@ -6,14 +6,23 @@ from schemas.user import TokenResponse, UserResponse
 class RegisterResponse(BaseModel):
     message: str
     user: UserResponse
-    tokens: TokenResponse
-    # can add phone number and stuff later if we want
 
 
 class LoginResponse(BaseModel):
     message: str
     user: UserResponse
     tokens: TokenResponse
+
+
+class SendOtpRequest(BaseModel):
+    email: EmailStr
+    purpose: str = "email_verification"
+
+
+class VerifyOtpRequest(BaseModel):
+    email: EmailStr
+    otp: str
+    purpose: str = "email_verification"
 
 
 class RefreshTokenRequest(BaseModel):

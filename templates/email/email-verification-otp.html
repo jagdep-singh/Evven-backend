@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Verify your Evven email</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        background: #f6f7fb;
+        font-family: Arial, Helvetica, sans-serif;
+        color: #101828;
+      }
+      .wrap {
+        width: 100%;
+        padding: 32px 16px;
+      }
+      .card {
+        max-width: 560px;
+        margin: 0 auto;
+        background: #ffffff;
+        border-radius: 24px;
+        overflow: hidden;
+        border: 1px solid #e4e7ec;
+      }
+      .hero {
+        padding: 32px 32px 20px;
+        background: linear-gradient(135deg, #101828 0%, #1d2939 100%);
+        color: #fff;
+      }
+      .hero h1 {
+        margin: 0;
+        font-size: 28px;
+        line-height: 1.15;
+      }
+      .content {
+        padding: 32px;
+      }
+      .otp {
+        margin: 24px 0;
+        padding: 18px 20px;
+        text-align: center;
+        border-radius: 16px;
+        border: 1px dashed #d0d5dd;
+        background: #f9fafb;
+        font-size: 34px;
+        letter-spacing: 0.35em;
+        font-weight: 700;
+      }
+      .muted {
+        color: #667085;
+        line-height: 1.7;
+        margin: 0;
+      }
+      .footer {
+        padding: 0 32px 28px;
+        color: #98a2b3;
+        font-size: 12px;
+        line-height: 1.6;
+      }
+      @media (max-width: 480px) {
+        .hero,
+        .content,
+        .footer {
+          padding-left: 20px;
+          padding-right: 20px;
+        }
+        .otp {
+          font-size: 28px;
+          letter-spacing: 0.28em;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="card">
+        <div class="hero">
+          <h1>Verify your email</h1>
+        </div>
+        <div class="content">
+          <p class="muted">Hi __USER_NAME__,</p>
+          <p class="muted" style="margin-top: 12px;">
+            Use this code to verify your Evven account. It expires in __EXPIRY_MINUTES__ minutes.
+          </p>
+          <div class="otp">__OTP_CODE__</div>
+          <p class="muted">
+            If you didn't create this account, you can safely ignore this email.
+          </p>
+        </div>
+        <div class="footer">
+          This code was requested from Evven. If the button below doesn't work in your client, open the app and enter the code manually.
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

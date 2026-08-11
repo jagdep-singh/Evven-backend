@@ -28,6 +28,7 @@ class User(Base):
         SQLEnum(AuthProvider), nullable=False, default=AuthProvider.LOCAL
     )
     profile_picture = Column(String, nullable=True)
+    is_verified = Column(Boolean, nullable=False, default=False)
     is_active = Column(Boolean, nullable=False, default=True)
     created_at = Column(
         TIMESTAMP(timezone=True), server_default=func.now(), nullable=False
