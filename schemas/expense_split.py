@@ -13,6 +13,7 @@ class ExpenseCreate(BaseModel):
     split_type: str
     splits_input: Optional[dict[UUID, Decimal]] = None
     participant_ids: Optional[list[UUID]] = None
+    payment_method: str | None = None
 
     @model_validator(mode="after")
     def validate_splits(self) -> "ExpenseCreate":
@@ -38,6 +39,7 @@ class ExpenseUpdate(BaseModel):
     split_type: Optional[str] = None
     splits_input: Optional[dict[UUID, Decimal]] = None
     participant_ids: Optional[list[UUID]] = None
+    payment_method: Optional[str] = None
 
     @model_validator(mode="after")
     def validate_splits(self) -> "ExpenseUpdate":
@@ -68,6 +70,7 @@ class ExpenseResponse(BaseModel):
     amount: Decimal
     category: str | None = None
     split_type: str
+    payment_method: str | None = None
     created_at: datetime
 
     model_config = {"from_attributes": True}

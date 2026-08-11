@@ -11,6 +11,7 @@ class PersonalExpenseCreate(BaseModel):
     category: str | None = None
     date: datetime | None = None
     notes: str | None = None
+    payment_method: str | None = None
 
 
 class PersonalExpenseUpdate(BaseModel):
@@ -19,6 +20,7 @@ class PersonalExpenseUpdate(BaseModel):
     category: str | None = None
     date: datetime | None = None
     notes: str | None = None
+    payment_method: str | None = None
 
 
 class PersonalExpenseResponse(BaseModel):
@@ -31,6 +33,7 @@ class PersonalExpenseResponse(BaseModel):
     category: str | None = None
     date: datetime | None = None
     notes: str | None = None
+    payment_method: str | None = None
     created_at: datetime
 
     model_config = {"from_attributes": True}

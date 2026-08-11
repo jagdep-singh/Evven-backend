@@ -3,6 +3,7 @@ from uuid import UUID
 from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from models.group_expenses import PaymentMethod
 from models.personal_expenses import PersonalExpense
 from repository.personal_expense_repository import PersonalExpenseRepository
 from schemas.common import SuccessResponse
@@ -27,6 +28,9 @@ async def create_personal_expense(
         category=expense_data.category,
         date=expense_data.date,
         notes=expense_data.notes,
+        payment_method=PaymentMethod(expense_data.payment_method.upper())
+        if expense_data.payment_method
+        else None,
     )
 
     created_expense = await repo.create_expense(expense)
@@ -89,6 +93,11 @@ async def update_personal_expense(
         )
 
     update_data = expense_data.model_dump(exclude_unset=True)
+
+    if "payment_method" in update_data and update_data["payment_method"]:
+        update_data["payment_method"] = PaymentMethod(
+            update_data["payment_method"].upper()
+        )
 
     for field, value in update_data.items():
         setattr(expense, field, value)

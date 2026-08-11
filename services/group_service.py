@@ -3,7 +3,8 @@ from uuid import UUID
 from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from models.groups import Group
+from models.group_members import Role
+from models.groups import Group, GroupType
 from repository.expense_repository import ExpenseRepository
 from repository.group_member_repository import GroupMemberRepository
 from repository.group_repository import GroupRepository
@@ -24,6 +25,7 @@ def _member_response_data(member) -> dict:
         "id": member.id,
         "name": member.user.name if member.user else str(member.user_id)[:8],
         "user_code": member.user.user_code if member.user else "",
+        "profile_picture": member.user.profile_picture if member.user else None,
         "group_id": member.group_id,
         "user_id": member.user_id,
         "joined_at": member.joined_at,
@@ -38,7 +40,7 @@ async def create_group(
     member_repo = GroupMemberRepository(db)
     group = Group(name=group_data.name, created_by=user_id)
     created_group = await repo.create(group)
-    await member_repo.add_group_member(user_id, created_group.id)
+    await member_repo.add_group_member(user_id, created_group.id, role=Role.ADMIN)
     return SuccessResponse(
         message="Group created successfully",
         data=GroupResponse.model_validate(created_group),
@@ -87,6 +89,8 @@ async def update_group(
     group = await repo.get_by_id(group_id)
     if not group:
         raise HTTPException(status_code=404, detail="Group not found")
+    if group.group_type == GroupType.FRIEND:
+        raise HTTPException(status_code=400, detail="Friend Groups cannot be renamed")
 
     if group.created_by != user_id:
         raise HTTPException(
@@ -114,6 +118,11 @@ async def delete_group(
         raise HTTPException(
             status_code=403, detail="Only group creator can delete the group"
         )
+    if group.group_type == GroupType.FRIEND:
+        raise HTTPException(
+            status_code=400,
+            detail="Friend Groups cannot be deleted; use unfriend instead",
+        )
 
     await repo.delete(group)
 
@@ -130,6 +139,8 @@ async def add_member(
     group = await repo.get_by_id(group_id)
     if not group:
         raise HTTPException(status_code=404, detail="Group not found")
+    if group.group_type == GroupType.FRIEND:
+        raise HTTPException(status_code=400, detail="Friend Groups cannot add members")
 
     user = await user_repo.get_user_by_user_code(user_code)
     if not user:
@@ -167,6 +178,8 @@ async def remove_member(
     group = await repo.get_by_id(group_id)
     if not group:
         raise HTTPException(status_code=404, detail="Group not found")
+    if group.group_type == GroupType.FRIEND:
+        raise HTTPException(status_code=400, detail="Use unfriend instead")
 
     if not await _can_access_group(group, current_user_id, member_repo):
         raise HTTPException(status_code=403, detail="Member is not authorised")

@@ -30,6 +30,7 @@ class GroupMemberResponse(BaseModel):
     id: UUID
     name: str
     user_code: str
+    profile_picture: str | None = None
     group_id: UUID
     user_id: UUID
     joined_at: datetime

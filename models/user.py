@@ -59,8 +59,8 @@ class User(Base):
 
     # # relationship b/w friend and user
 
-    friends = relationship(
-        "Friend",
-        back_populates="owner",
+    refresh_tokens = relationship(
+        "RefreshToken",
+        back_populates="user",
         cascade="all, delete-orphan",
     )

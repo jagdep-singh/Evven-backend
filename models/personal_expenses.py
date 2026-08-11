@@ -1,11 +1,13 @@
 import uuid
 
 from sqlalchemy import Column, DateTime, ForeignKey, Numeric, String, Text
+from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
 from core.database import Base
+from models.group_expenses import PaymentMethod
 
 
 class PersonalExpense(Base):
@@ -24,6 +26,7 @@ class PersonalExpense(Base):
     category = Column(String, nullable=True)
     date = Column(DateTime(timezone=True), nullable=True)
     notes = Column(Text, nullable=True)
+    payment_method = Column(SQLEnum(PaymentMethod), nullable=True)
     created_at = Column(DateTime, server_default=func.now())
 
     # relationships

@@ -1,9 +1,9 @@
 from models.expense_splits import ExpenseSplit as ExpenseSplit
-from models.friend import Friend as Friend
 from models.group_expenses import GroupExpense as GroupExpense
 from models.group_members import GroupMember as GroupMember
 from models.groups import Group as Group
 from models.password_reset_token import PasswordResetToken as PasswordResetToken
 from models.personal_expenses import PersonalExpense as PersonalExpense
+from models.refresh_token import RefreshToken as RefreshToken
 from models.settlements import Settlement as Settlement
 from models.user import User as User

@@ -16,6 +16,11 @@ class SplitType(Enum):
     PERCENTAGE = "percentage"
 
 
+class PaymentMethod(Enum):
+    UPI = "UPI"
+    CASH = "CASH"
+
+
 class GroupExpense(Base):
     __tablename__ = "group_expenses"
 
@@ -28,6 +33,7 @@ class GroupExpense(Base):
     split_type = Column(
         SQLEnum(SplitType), nullable=False, default=SplitType.EQUAL
     )  # "equal" / "exact" / "percentage"
+    payment_method = Column(SQLEnum(PaymentMethod), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     # relationships
