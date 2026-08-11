@@ -27,7 +27,12 @@ from models.user import AuthProvider, User
 from repository.email_verification_repository import EmailVerificationRepository
 from repository.refresh_token_repository import RefreshTokenRepository
 from repository.user_repository import UserRepository
-from schemas.auth import LoginResponse, RegisterResponse
+from schemas.auth import (
+    LoginResponse,
+    RegisterResponse,
+    SendOtpResponse,
+    VerifyOtpResponse,
+)
 from schemas.user import GoogleAuthRequest, TokenResponse, UserCreate, UserLogin
 from utils.user_utils import generate_user_code
 
@@ -71,6 +76,23 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None) -> s
     )
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
+
+
+def create_temporary_token(
+    data: dict,
+    *,
+    token_type: str,
+    expires_delta: timedelta,
+) -> str:
+    to_encode = data.copy()
+    expire = utc_now() + expires_delta
+    to_encode.update(
+        {
+            "exp": expire,
+            "type": token_type,
+        }
+    )
+    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
 
 def create_refresh_token(
@@ -265,7 +287,31 @@ async def register_user(user_data: UserCreate, db: AsyncSession) -> RegisterResp
     verification_repo = EmailVerificationRepository(db)
 
     existing_user = await repo.get_user_by_email(user_data.email)
-    if existing_user:
+
+    signup_verified_email: str | None = None
+    if user_data.signup_token:
+        payload = decode_token(user_data.signup_token, expected_type="signup_verified")
+        if not payload:
+            raise HTTPException(
+                status_code=400,
+                detail="Invalid or expired signup verification token",
+            )
+
+        signup_verified_email = payload.get("email")
+        if not signup_verified_email:
+            raise HTTPException(
+                status_code=400,
+                detail="Invalid signup verification token",
+            )
+
+        if str(user_data.email).lower() != str(signup_verified_email).lower():
+            raise HTTPException(
+                status_code=400,
+                detail="Signup verification token does not match the email",
+            )
+        if existing_user and existing_user.is_verified:
+            raise HTTPException(status_code=400, detail="Email already registered")
+    elif existing_user:
         raise HTTPException(status_code=400, detail="Email already registered")
 
     while True:
@@ -284,10 +330,24 @@ async def register_user(user_data: UserCreate, db: AsyncSession) -> RegisterResp
         email=user_data.email,
         password_hash=hashed_password,
         auth_provider=AuthProvider.LOCAL,
-        is_verified=False,
+        is_verified=bool(signup_verified_email),
     )
 
-    created_user = await repo.create_user(new_user)
+    if existing_user and signup_verified_email:
+        existing_user.name = user_data.name
+        existing_user.password_hash = hashed_password
+        existing_user.auth_provider = AuthProvider.LOCAL
+        existing_user.is_verified = True
+        created_user = await repo.update_user(existing_user)
+    else:
+        created_user = await repo.create_user(new_user)
+
+    if signup_verified_email:
+        return RegisterResponse(
+            message="User created successfully.",
+            user=created_user,
+            tokens=await issue_token_pair(created_user, db),
+        )
 
     token = await create_and_send_verification_code(
         user=created_user, repo=verification_repo
@@ -433,6 +493,42 @@ async def create_and_send_verification_code(
     return otp
 
 
+async def create_and_send_signup_verification_code(
+    *,
+    email: str,
+    repo: UserRepository,
+) -> dict[str, str]:
+    existing_user = await repo.get_user_by_email(email)
+    if existing_user:
+        raise HTTPException(status_code=400, detail="Email already registered")
+
+    otp = _generate_verification_otp()
+    challenge_token = create_temporary_token(
+        {
+            "email": email,
+            "otp_hash": _hash_verification_otp(otp),
+        },
+        token_type="signup_challenge",
+        expires_delta=timedelta(minutes=RESET_TOKEN_EXPIRE_MINUTES),
+    )
+
+    sent = await send_verification_email(
+        email,
+        otp,
+        email.split("@", 1)[0] if "@" in email else "there",
+    )
+    if not sent:
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to send verification email",
+        )
+
+    return {
+        "message": "Verification code sent",
+        "challenge_token": challenge_token,
+    }
+
+
 async def resend_verification_code(email: str, db: AsyncSession) -> dict[str, str]:
     repo = UserRepository(db)
     verification_repo = EmailVerificationRepository(db)
@@ -452,12 +548,65 @@ async def resend_verification_code(email: str, db: AsyncSession) -> dict[str, st
     return {"message": "Verification code sent"}
 
 
+async def send_otp_for_signup(email: str, db: AsyncSession) -> dict[str, str]:
+    repo = UserRepository(db)
+    return await create_and_send_signup_verification_code(email=email, repo=repo)
+
+
 async def verify_otp(
-    email: str,
+    email: str | None,
     otp: str,
     db: AsyncSession,
-) -> LoginResponse:
+    *,
+    purpose: str = "email_verification",
+    challenge_token: str | None = None,
+) -> VerifyOtpResponse:
     repo = UserRepository(db)
+
+    if purpose == "signup":
+        if not challenge_token:
+            raise HTTPException(
+                status_code=400, detail="Signup verification token is required"
+            )
+
+        payload = decode_token(challenge_token, expected_type="signup_challenge")
+        if not payload:
+            raise HTTPException(
+                status_code=400, detail="Invalid or expired signup verification token"
+            )
+
+        token_email = payload.get("email")
+        token_hash = payload.get("otp_hash")
+        if not token_email or not token_hash:
+            raise HTTPException(
+                status_code=400, detail="Invalid signup verification token"
+            )
+
+        if email and str(email).lower() != str(token_email).lower():
+            raise HTTPException(
+                status_code=400, detail="Signup verification email does not match"
+            )
+
+        if token_hash != _hash_verification_otp(otp):
+            raise HTTPException(
+                status_code=400, detail="Invalid or expired verification code"
+            )
+
+        signup_token = create_temporary_token(
+            {"email": token_email},
+            token_type="signup_verified",
+            expires_delta=timedelta(minutes=RESET_TOKEN_EXPIRE_MINUTES),
+        )
+
+        return VerifyOtpResponse(
+            message="Email verified successfully",
+            signup_token=signup_token,
+            email=token_email,
+        )
+
+    if not email:
+        raise HTTPException(status_code=400, detail="Email is required")
+
     verification_repo = EmailVerificationRepository(db)
 
     user = await repo.get_user_by_email(email)
@@ -477,7 +626,7 @@ async def verify_otp(
     await repo.update_user(user)
     await verification_repo.mark_token_as_used(token)
 
-    return LoginResponse(
+    return VerifyOtpResponse(
         message="Email verified successfully",
         user=user,
         tokens=await issue_token_pair(user, db),
