@@ -17,10 +17,10 @@ from core.config import (
     ACCESS_TOKEN_EXPIRE_MINUTES,
     ALGORITHM,
     GOOGLE_CLIENT_ID,
-    RESET_TOKEN_EXPIRE_MINUTES,
     REFRESH_TOKEN_EXPIRE_DAYS,
     RESEND_API_KEY,
     RESEND_FROM,
+    RESET_TOKEN_EXPIRE_MINUTES,
     SECRET_KEY,
 )
 from models.user import AuthProvider, User
@@ -289,7 +289,9 @@ async def register_user(user_data: UserCreate, db: AsyncSession) -> RegisterResp
 
     created_user = await repo.create_user(new_user)
 
-    token = await create_and_send_verification_code(user=created_user, repo=verification_repo)
+    token = await create_and_send_verification_code(
+        user=created_user, repo=verification_repo
+    )
 
     if not token:
         await repo.delete_user(created_user)
@@ -431,9 +433,7 @@ async def create_and_send_verification_code(
     return otp
 
 
-async def resend_verification_code(
-    email: str, db: AsyncSession
-) -> dict[str, str]:
+async def resend_verification_code(email: str, db: AsyncSession) -> dict[str, str]:
     repo = UserRepository(db)
     verification_repo = EmailVerificationRepository(db)
 
@@ -469,7 +469,9 @@ async def verify_otp(
 
     token = await verification_repo.get_latest_valid_token(user.id)
     if not token or token.token_hash != _hash_verification_otp(otp):
-        raise HTTPException(status_code=400, detail="Invalid or expired verification code")
+        raise HTTPException(
+            status_code=400, detail="Invalid or expired verification code"
+        )
 
     user.is_verified = True
     await repo.update_user(user)

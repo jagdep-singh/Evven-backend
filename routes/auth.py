@@ -24,9 +24,9 @@ from services.auth_service import (
     google_login,
     login_user,
     register_user,
+    resend_verification_code,
     revoke_refresh_token,
     rotate_refresh_token,
-    resend_verification_code,
     verify_otp,
 )
 from services.reset_password_service import (
@@ -54,7 +54,9 @@ async def send_otp(body: SendOtpRequest, db: AsyncSession = Depends(get_db)):
     return await resend_verification_code(body.email, db)
 
 
-@router.post("/verify-otp", response_model=LoginResponse, status_code=status.HTTP_200_OK)
+@router.post(
+    "/verify-otp", response_model=LoginResponse, status_code=status.HTTP_200_OK
+)
 async def verify_email(body: VerifyOtpRequest, db: AsyncSession = Depends(get_db)):
     return await verify_otp(body.email, body.otp, db)
 
