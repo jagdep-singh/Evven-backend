@@ -42,9 +42,9 @@ async def get_current_user(
 
     user = await repo.get_user_by_id(UUID(user_id))
 
-    if not user or not user.is_active:
+    if not user or not user.is_active or not user.is_verified:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Inactive or Invalid user",
+            detail="Inactive, unverified, or invalid user",
         )
     return user
