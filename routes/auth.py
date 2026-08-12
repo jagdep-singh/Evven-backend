@@ -10,6 +10,10 @@ from schemas.auth import (
     RefreshTokenRequest,
     RegisterResponse,
     ResetPasswordRequest,
+    SendOtpRequest,
+    SendOtpResponse,
+    VerifyOtpRequest,
+    VerifyOtpResponse,
 )
 from schemas.user import (
     GoogleAuthRequest,
@@ -22,8 +26,11 @@ from services.auth_service import (
     google_login,
     login_user,
     register_user,
+    resend_verification_code,
     revoke_refresh_token,
     rotate_refresh_token,
+    send_otp_for_signup,
+    verify_otp,
 )
 from services.reset_password_service import (
     request_password_reset,
@@ -43,6 +50,29 @@ async def register(user_data: UserCreate, db: AsyncSession = Depends(get_db)):
 @router.post("/login", response_model=LoginResponse, status_code=status.HTTP_200_OK)
 async def login(login_data: UserLogin, db: AsyncSession = Depends(get_db)):
     return await login_user(login_data, db)
+
+
+@router.post(
+    "/send-otp", response_model=SendOtpResponse, status_code=status.HTTP_200_OK
+)
+async def send_otp(body: SendOtpRequest, db: AsyncSession = Depends(get_db)):
+    if body.purpose == "signup":
+        return await send_otp_for_signup(body.email, db)
+
+    return await resend_verification_code(body.email, db)
+
+
+@router.post(
+    "/verify-otp", response_model=VerifyOtpResponse, status_code=status.HTTP_200_OK
+)
+async def verify_email(body: VerifyOtpRequest, db: AsyncSession = Depends(get_db)):
+    return await verify_otp(
+        body.email,
+        body.otp,
+        db,
+        purpose=body.purpose,
+        challenge_token=body.challenge_token,
+    )
 
 
 @router.get("/me", response_model=UserResponse, status_code=status.HTTP_200_OK)

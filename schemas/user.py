@@ -8,6 +8,7 @@ class UserCreate(BaseModel):
     name: str
     email: EmailStr
     password: str
+    signup_token: str | None = None
 
 
 class UserLogin(BaseModel):
@@ -32,6 +33,7 @@ class UserResponse(BaseModel):
     email: EmailStr
     auth_provider: str
     profile_picture: str | None = None
+    preferred_theme: str | None = None
     created_at: dt
 
     model_config = {"from_attributes": True}
@@ -40,3 +42,4 @@ class UserResponse(BaseModel):
 class UserUpdate(BaseModel):
     name: str | None = None
     profile_picture: str | None = None
+    preferred_theme: str | None = None

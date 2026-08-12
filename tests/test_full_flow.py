@@ -9,6 +9,7 @@ from core.database import AsyncSessionLocal
 from main import app
 from models.expense_splits import ExpenseSplit
 from models.group_expenses import GroupExpense
+from models.user import User
 
 
 def auth_headers(user: dict) -> dict[str, str]:
@@ -32,11 +33,28 @@ async def register_user(client: AsyncClient, name: str, email: str) -> dict:
     assert response.status_code == 201, response.text
 
     body = response.json()
+
+    async with AsyncSessionLocal() as session:
+        result = await session.execute(select(User).where(User.email == email))
+        user = result.scalar_one()
+        user.is_verified = True
+        await session.commit()
+
+    login_response = await client.post(
+        "/auth/login",
+        json={
+            "email": email,
+            "password": "test123",
+        },
+    )
+    assert login_response.status_code == 200, login_response.text
+    token = login_response.json()["tokens"]["access_token"]
+
     return {
         "id": body["user"]["id"],
         "code": body["user"]["user_code"],
         "name": name,
-        "token": body["tokens"]["access_token"],
+        "token": token,
     }
 
 
