@@ -28,6 +28,7 @@ class User(Base):
         SQLEnum(AuthProvider), nullable=False, default=AuthProvider.LOCAL
     )
     profile_picture = Column(String, nullable=True)
+    preferred_theme = Column(String(50), nullable=True, default=None)
     is_verified = Column(Boolean, nullable=False, default=False)
     is_active = Column(Boolean, nullable=False, default=True)
     created_at = Column(
