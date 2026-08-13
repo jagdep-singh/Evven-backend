@@ -232,6 +232,8 @@ async def get_friend_detail(
     )
     balance = balances.get(other.user_id, Decimal("0"))
 
+    activity = await _build_friend_activity(group.id, current_user_id, db)
+
     return FriendDetailResponse(
         id=other.user_id,
         name=other.user.name,
@@ -239,6 +241,7 @@ async def get_friend_detail(
         profile_picture=other.user.profile_picture,
         group_id=group.id,
         balance=balance,
+        activity=activity,
     )
 
 
