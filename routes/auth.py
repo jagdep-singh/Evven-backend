@@ -80,14 +80,15 @@ google_auth_limiter = create_rate_limiter(
 # Authentication
 # -------------------------------------------------------------------
 
+
 @router.post(
     "/register",
     response_model=RegisterResponse,
     status_code=status.HTTP_201_CREATED,
 )
 async def register(
-        user_data: UserCreate,
-        db: AsyncSession = Depends(get_db),
+    user_data: UserCreate,
+    db: AsyncSession = Depends(get_db),
 ):
     return await register_user(user_data, db)
 
@@ -98,8 +99,8 @@ async def register(
     status_code=status.HTTP_200_OK,
 )
 async def login(
-        login_data: UserLogin,
-        db: AsyncSession = Depends(get_db),
+    login_data: UserLogin,
+    db: AsyncSession = Depends(get_db),
 ):
     return await login_user(login_data, db)
 
@@ -138,8 +139,8 @@ async def read_current_user(user: User = Depends(get_current_user)):
     status_code=status.HTTP_200_OK,
 )
 async def refresh(
-        refresh_data: RefreshTokenRequest,
-        db: AsyncSession = Depends(get_db),
+    refresh_data: RefreshTokenRequest,
+    db: AsyncSession = Depends(get_db),
 ):
     return await rotate_refresh_token(
         refresh_data.refresh_token,
@@ -152,9 +153,9 @@ async def refresh(
     status_code=status.HTTP_200_OK,
 )
 async def logout(
-        refresh_data: RefreshTokenRequest,
-        user: User = Depends(get_current_user),
-        db: AsyncSession = Depends(get_db),
+    refresh_data: RefreshTokenRequest,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
 ):
     await revoke_refresh_token(
         refresh_data.refresh_token,
@@ -169,6 +170,7 @@ async def logout(
 # Forgot password
 # -------------------------------------------------------------------
 
+
 @router.get(
     "/forgot-password",
     include_in_schema=False,
@@ -182,9 +184,9 @@ def forget_password():
     status_code=status.HTTP_200_OK,
 )
 async def request_password(
-        body: ForgotPasswordRequest,
-        db: AsyncSession = Depends(get_db),
-        _: None = Depends(forgot_password_limiter),
+    body: ForgotPasswordRequest,
+    db: AsyncSession = Depends(get_db),
+    _: None = Depends(forgot_password_limiter),
 ):
     return await request_password_reset(
         body.email,
@@ -196,19 +198,20 @@ async def request_password(
 # Reset password
 # -------------------------------------------------------------------
 
+
 @router.get("/reset-password")
 def reset_password_page(
-        token: str,
-        _: None = Depends(reset_password_page_limiter),
+    token: str,
+    _: None = Depends(reset_password_page_limiter),
 ):
     return FileResponse("templates/password-reset.html")
 
 
 @router.put("/reset-password")
 async def update_password(
-        body: ResetPasswordRequest,
-        db: AsyncSession = Depends(get_db),
-        _: None = Depends(reset_password_limiter),
+    body: ResetPasswordRequest,
+    db: AsyncSession = Depends(get_db),
+    _: None = Depends(reset_password_limiter),
 ):
     return await reset_password(
         body.token,
@@ -221,15 +224,16 @@ async def update_password(
 # Google authentication
 # -------------------------------------------------------------------
 
+
 @router.post(
     "/google",
     response_model=LoginResponse,
     status_code=status.HTTP_200_OK,
 )
 async def google_auth(
-        body: GoogleAuthRequest,
-        db: AsyncSession = Depends(get_db),
-        _: None = Depends(google_auth_limiter),
+    body: GoogleAuthRequest,
+    db: AsyncSession = Depends(get_db),
+    _: None = Depends(google_auth_limiter),
 ):
     return await google_login(
         body,
