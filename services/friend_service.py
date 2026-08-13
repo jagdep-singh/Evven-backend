@@ -9,8 +9,10 @@ from repository.expense_repository import ExpenseRepository
 from repository.friend_repository import FriendRepository
 from repository.group_member_repository import GroupMemberRepository
 from repository.group_repository import GroupRepository
+from repository.settlement_repository import SettlementRepository
 from repository.user_repository import UserRepository
 from schemas.friend import (
+    FriendActivityEntry,
     FriendDetailResponse,
     FriendRequestListResponse,
     FriendResponse,
@@ -158,6 +160,9 @@ async def list_friends(current_user_id: UUID, db: AsyncSession) -> list[FriendRe
     )
 
     result = []
+    group_ids = [g.id for g in groups]
+    last_activity = await friend_repo.get_last_activity_by_group_ids(group_ids)
+
     for group in groups:
         members = await GroupMemberRepository(db).list_group_members(group.id)
         other = next((m for m in members if m.user_id != current_user_id), None)
@@ -178,10 +183,19 @@ async def list_friends(current_user_id: UUID, db: AsyncSession) -> list[FriendRe
                 profile_picture=other.user.profile_picture,
                 group_id=group.id,
                 balance=balance,
-            )
+            ),
+            last_activity.get(group.id),
         )
 
-    return result
+    result.sort(
+        key=lambda pair: (
+            pair[1] is None,
+            -(pair[1].timestamp()) if pair[1] else 0,
+            pair[0].name.lower(),
+        )
+    )
+
+    return [friend for friend, _ in result]
 
 
 async def get_friend_detail(
@@ -258,3 +272,50 @@ async def unfriend(
 
     # Soft-remove: set status to REMOVED
     await friend_repo.update_status(group, GroupStatus.REMOVED)
+
+
+async def _build_friend_activity(
+    group_id: UUID,
+    current_user_id: UUID,
+    db: AsyncSession,
+) -> list[FriendActivityEntry]:
+    expense_repo = ExpenseRepository(db)
+    settlement_repo = SettlementRepository(db)
+
+    expenses = await expense_repo.get_group_expense_with_splits(group_id)
+    settlements = await settlement_repo.get_settlements_by_group_id(group_id)
+
+    activity: list[FriendActivityEntry] = []
+
+    for expense in expenses:
+        your_split = next(
+            (s.amount for s in expense.splits if s.user_id == current_user_id),
+            None,
+        )
+        activity.append(
+            FriendActivityEntry(
+                type="expense",
+                id=expense.id,
+                title=expense.title,
+                amount=expense.amount,
+                created_at=expense.created_at,
+                your_share=your_split,
+            )
+        )
+
+    for settlement in settlements:
+        direction = (
+            "You paid" if settlement.payer_id == current_user_id else "You received"
+        )
+        activity.append(
+            FriendActivityEntry(
+                type="settlement",
+                id=settlement.id,
+                title=direction,
+                amount=settlement.amount,
+                created_at=settlement.created_at,
+            )
+        )
+
+    activity.sort(key=lambda entry: entry.created_at, reverse=True)
+    return activity
