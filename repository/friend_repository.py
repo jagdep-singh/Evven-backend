@@ -1,10 +1,13 @@
+from datetime import datetime
 from uuid import UUID
 
-from sqlalchemy import delete, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from models.group_expenses import GroupExpense
 from models.group_members import GroupMember, Role
 from models.groups import Group, GroupStatus, GroupType
+from models.settlements import Settlement
 
 
 class FriendRepository:
@@ -28,7 +31,7 @@ class FriendRepository:
         # Main Query
         stmt = (
             select(Group)
-            .join(GroupMember, Group.id == GroupMember.user_id)
+            .join(GroupMember, Group.id == GroupMember.group_id)
             .where(
                 GroupMember.user_id == user_b_id,
                 Group.id.in_(subquery_a),
@@ -137,3 +140,40 @@ class FriendRepository:
 
         await self.session.delete(group)
         await self.session.commit()
+
+    """
+    finding last activity in group to sort and return in get_friend detail  
+    """
+
+    async def get_last_activity_by_group_ids(
+        self, group_ids: list[UUID]
+    ) -> dict[UUID, datetime]:
+        if not group_ids:
+            return {}
+
+        expense_stmt = (
+            select(GroupMember.group_id, func.max(GroupExpense.created_at))
+            .where(GroupExpense.group_id.in_(group_ids))
+            .group_by(GroupExpense.group_id)
+        )
+
+        settlement_stmt = (
+            select(Settlement.group_id, func.max(Settlement.created_at))
+            .where(Settlement.group_id.in_(group_ids))
+            .group_by(Settlement.group_id)
+        )
+
+        expense_result = await self.session.execute(expense_stmt)
+        settlement_result = await self.session.execute(settlement_stmt)
+
+        last_activity: dict[UUID, datetime] = {}
+
+        for group_id, ts in expense_result.all():
+            if ts and (group_id not in last_activity or ts > last_activity[group_id]):
+                last_activity[group_id] = ts
+
+        for group_id, ts in settlement_result.all():
+            if ts and (group_id not in last_activity or ts > last_activity[group_id]):
+                last_activity[group_id] = ts
+
+        return last_activity

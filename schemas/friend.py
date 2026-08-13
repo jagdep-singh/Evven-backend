@@ -34,5 +34,14 @@ class FriendResponse(BaseModel):
     balance: Decimal  # positive = they owe you, negative = you owe them
 
 
+class FriendActivityEntry(BaseModel):
+    type: str
+    id: UUID
+    title: Optional[str] = None
+    amount: Decimal
+    created_at: datetime
+    your_share: Optional[Decimal] = None
+
+
 class FriendDetailResponse(FriendResponse):
-    pass
+    activity: list[FriendActivityEntry] = []
