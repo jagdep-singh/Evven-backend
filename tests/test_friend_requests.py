@@ -7,6 +7,7 @@ import pytest
 
 from models.groups import GroupStatus
 from repository.friend_repository import FriendRepository
+from routes.friends import create_friend_request
 
 # The friend route imports auth dependencies through the app stack. Those
 # modules are optional in this test container, so stub the google auth module
@@ -29,8 +30,6 @@ sys.modules.setdefault("google.auth.transport", google_auth_transport_module)
 sys.modules.setdefault("google.auth.transport.requests", google_auth_requests_module)
 sys.modules.setdefault("google.oauth2", google_oauth2_module)
 sys.modules.setdefault("google.oauth2.id_token", google_id_token_module)
-
-from routes.friends import create_friend_request
 
 
 class _FakeResult:
@@ -102,7 +101,9 @@ async def test_find_friend_group_between_users_joins_members_on_group_id():
 
     await repository.find_friend_group_between_users(uuid4(), uuid4())
 
-    compiled_sql = str(session.statement.compile(compile_kwargs={"literal_binds": True}))
+    compiled_sql = str(
+        session.statement.compile(compile_kwargs={"literal_binds": True})
+    )
 
     assert "JOIN group_members ON groups.id = group_members.group_id" in compiled_sql
     assert "group_members.user_id" in compiled_sql
