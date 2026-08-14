@@ -86,7 +86,7 @@ async def get_friends(
 
 
 @router.get("/{group_id}", response_model=SuccessResponse[FriendDetailResponse])
-async def get_friend(
+async def get_friend_details(
     group_id: UUID,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
