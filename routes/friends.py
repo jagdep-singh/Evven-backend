@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.deps import get_current_user, get_db
+from models.groups import GroupStatus
 from models.user import User
 from schemas.common import SuccessResponse
 from schemas.friend import (
@@ -35,7 +36,7 @@ async def create_friend_request(
 
     status_msg = (
         "Friend request sent"
-        if group.status == "PENDING"
+        if group.status == GroupStatus.PENDING
         else "Friend added successfully"
     )
 
@@ -85,7 +86,7 @@ async def get_friends(
 
 
 @router.get("/{group_id}", response_model=SuccessResponse[FriendDetailResponse])
-async def get_friend(
+async def get_friend_details(
     group_id: UUID,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),

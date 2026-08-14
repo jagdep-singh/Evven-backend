@@ -40,7 +40,7 @@ class RateLimiter:
             bucket.tokens = min(
                 self.capacity,
                 bucket.tokens + elapsed * self.refill_rate,
-                )
+            )
             bucket.last_refill = now
 
         return bucket
@@ -72,9 +72,9 @@ def get_client_ip(request: Request) -> str:
 
 
 def create_rate_limiter(
-        capacity: int,
-        refill_rate: float,
-        key_builder: Callable[[Request], str] = get_client_ip,
+    capacity: int,
+    refill_rate: float,
+    key_builder: Callable[[Request], str] = get_client_ip,
 ):
     limiter = RateLimiter(capacity, refill_rate)
 
