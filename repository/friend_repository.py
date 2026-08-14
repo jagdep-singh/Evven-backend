@@ -18,20 +18,14 @@ class FriendRepository:
     async def find_friend_group_between_users(
         self, user_a_id: UUID, user_b_id: UUID
     ) -> Group | None:
-
-        subquery_a = (
-            select(GroupMember.group_id)
-            .where(GroupMember.user_id == user_a_id)
-            .subquery()
-        )
-
-        # Main Query
         stmt = (
             select(Group)
-            .join(GroupMember, Group.id == GroupMember.user_id)
+            .join(GroupMember, Group.id == GroupMember.group_id)
             .where(
                 GroupMember.user_id == user_b_id,
-                Group.id.in_(subquery_a),
+                Group.id.in_(
+                    select(GroupMember.group_id).where(GroupMember.user_id == user_a_id)
+                ),
                 Group.group_type == GroupType.FRIEND,
             )
         )
