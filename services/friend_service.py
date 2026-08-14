@@ -176,15 +176,17 @@ async def list_friends(current_user_id: UUID, db: AsyncSession) -> list[FriendRe
         balance = balances.get(other.user_id, Decimal("0"))
 
         result.append(
-            FriendResponse(
-                id=other.user_id,
-                name=other.user.name,
-                user_code=other.user.user_code,
-                profile_picture=other.user.profile_picture,
-                group_id=group.id,
-                balance=balance,
-            ),
-            last_activity.get(group.id),
+            (
+                FriendResponse(
+                    id=other.user_id,
+                    name=other.user.name,
+                    user_code=other.user.user_code,
+                    profile_picture=other.user.profile_picture,
+                    group_id=group.id,
+                    balance=balance,
+                ),
+                last_activity.get(group.id),
+            )
         )
 
     result.sort(

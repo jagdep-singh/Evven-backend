@@ -152,7 +152,7 @@ class FriendRepository:
             return {}
 
         expense_stmt = (
-            select(GroupMember.group_id, func.max(GroupExpense.created_at))
+            select(GroupExpense.group_id, func.max(GroupExpense.created_at))
             .where(GroupExpense.group_id.in_(group_ids))
             .group_by(GroupExpense.group_id)
         )
