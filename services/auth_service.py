@@ -1,4 +1,5 @@
 import hashlib
+import logging
 import random
 import secrets
 from datetime import datetime, timedelta, timezone
@@ -34,6 +35,8 @@ from schemas.auth import (
 )
 from schemas.user import GoogleAuthRequest, TokenResponse, UserCreate, UserLogin
 from utils.user_utils import generate_user_code
+
+logger = logging.getLogger(__name__)
 
 pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
 resend.api_key = RESEND_API_KEY
@@ -467,8 +470,11 @@ async def send_verification_email(to_email: str, otp: str, name: str) -> bool:
             }
         )
         return True
-    except Exception as exc:
-        print(f"[send_verification_email] failed for {to_email}: {exc}")
+    except Exception:
+        logger.exception(
+            "Failed to send reset email to %s",
+            to_email,
+        )
         return False
 
 

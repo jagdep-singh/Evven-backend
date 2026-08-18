@@ -42,10 +42,17 @@ async def record_payment(
         )
 
     if amount <= Decimal("0"):
-        raise ValueError("Payment amount must be positive.")
+        raise HTTPException(
+            status_code=400,
+            detail="Payment amount must be positive.",
+        )
 
     if payer_id == receiver_id:
-        raise ValueError("Payer and receiver cannot be the same user.")
+        raise HTTPException(
+            status_code=400,
+            detail="Payer and receiver cannot be the same user.",
+        )
+
     settlement = Settlement(
         group_id=group_id,
         payer_id=payer_id,
