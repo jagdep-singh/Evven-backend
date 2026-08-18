@@ -1,4 +1,5 @@
 import hashlib
+import logging
 import secrets
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -19,6 +20,8 @@ from repository.user_repository import UserRepository
 from services.auth_service import hash_password
 
 resend.api_key = RESEND_API_KEY
+
+logger = logging.getLogger(__name__)
 
 
 async def request_password_reset(email: str, db: AsyncSession):
@@ -93,6 +96,9 @@ async def send_reset_email(to_email: str, raw_token: str):
             }
         )
         return True
-    except Exception as e:
-        print(f"[send_reset_email] failed for {to_email}: {e}")
+    except Exception:
+        logger.exception(
+            "Failed to sent reset email to %s",
+            to_email,
+        )
         return False
