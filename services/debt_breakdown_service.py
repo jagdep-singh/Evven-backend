@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from engines.debt_breakdown_engine import (
     aggregate_debt,
+    apply_settlements_to_aggregated,
     build_debt_breakdown,
     settle_debts,
     simplify_debt,
@@ -44,7 +45,11 @@ class DebtBreakdownService:
         expenses = await self.expense_repository.get_group_expense_with_splits(group_id)
         engine_input = self._build_engine_input(expenses)
         breakdown = build_debt_breakdown(engine_input)
+        settlements = await self.settlement_repository.get_settlements_by_group_id(
+            group_id
+        )
         aggregated = aggregate_debt(breakdown)
+        apply_settlements_to_aggregated(aggregated, settlements)
         simplified = simplify_debt(aggregated)
         settled = settle_debts(simplified)
 
