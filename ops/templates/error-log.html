@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Evven Ops</title>
+    <link
+        href="https://api.fontshare.com/v2/css?f[]=satoshi@300,400,500,700&display=swap"
+        rel="stylesheet"
+    />
+    <link
+        href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet"
+    />
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        :root {
+            --bg: #2c2924;
+            --surface: #262424;
+            --card: #322f2a;
+            --border: #332c2c;
+            --text: #ffffff;
+            --muted: #888888;
+            --accent: #7a9e8e;
+            --error: #e57373;
+            --success: #7a9e8e;
+            --font: 'Satoshi', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            --mono: 'JetBrains Mono', 'Fira Code', monospace;
+        }
+        body {
+            font-family: var(--font);
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+        }
+        a { color: var(--accent); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+
+        /* login */
+        #login-view {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+        .login-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 40px;
+            width: 360px;
+        }
+        .login-card h1 {
+            font-size: 20px;
+            margin-bottom: 24px;
+            color: var(--accent);
+        }
+        .login-card input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--surface);
+            color: var(--text);
+            font-family: var(--font);
+            font-size: 14px;
+            margin-bottom: 12px;
+            outline: none;
+        }
+        .login-card input:focus { border-color: var(--accent); }
+        .login-card button {
+            width: 100%;
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            background: var(--accent);
+            color: var(--bg);
+            font-family: var(--font);
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            margin-top: 4px;
+        }
+        .login-card button:hover { opacity: 0.9; }
+        .login-error {
+            color: var(--error);
+            font-size: 13px;
+            margin-bottom: 8px;
+            display: none;
+        }
+
+        /* main view */
+        #main-view { display: none; }
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 24px;
+            border-bottom: 1px solid var(--border);
+            background: var(--surface);
+        }
+        .header h1 { font-size: 18px; color: var(--accent); }
+        .header button {
+            padding: 6px 14px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: transparent;
+            color: var(--muted);
+            font-family: var(--font);
+            font-size: 13px;
+            cursor: pointer;
+        }
+        .header button:hover { color: var(--text); border-color: var(--muted); }
+
+        /* tabs */
+        .tabs {
+            display: flex;
+            gap: 0;
+            padding: 0 24px;
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+        }
+        .tab {
+            padding: 10px 20px;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--muted);
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.15s;
+        }
+        .tab.active { color: var(--text); border-bottom-color: var(--accent); }
+        .tab:hover { color: var(--text); }
+
+        .content { padding: 20px 24px; }
+        .tab-panel { display: none; }
+        .tab-panel.active { display: block; }
+
+        /* filter bar */
+        .filter-bar {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+        .filter-bar select, .filter-bar input {
+            padding: 8px 10px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: var(--surface);
+            color: var(--text);
+            font-family: var(--font);
+            font-size: 13px;
+            outline: none;
+        }
+        .filter-bar select:focus, .filter-bar input:focus { border-color: var(--accent); }
+        .filter-bar input { flex: 1; min-width: 180px; }
+
+        /* error rows */
+        .error-row {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 14px 16px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: border-color 0.15s;
+        }
+        .error-row:hover { border-color: var(--muted); }
+        .error-row-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .error-row-header .msg {
+            flex: 1;
+            min-width: 200px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .badge {
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            font-family: var(--mono);
+        }
+        .badge-type { background: rgba(122,158,142,0.15); color: var(--accent); }
+        .badge-app { background: rgba(255,255,255,0.08); color: var(--muted); }
+        .badge-resolved { background: rgba(122,158,142,0.2); color: var(--success); }
+        .badge-open { background: rgba(229,115,115,0.15); color: var(--error); }
+        .error-meta {
+            display: flex;
+            gap: 12px;
+            margin-top: 6px;
+            font-size: 12px;
+            color: var(--muted);
+            flex-wrap: wrap;
+        }
+        .error-actions {
+            display: flex;
+            gap: 6px;
+            margin-top: 8px;
+        }
+        .error-actions button {
+            padding: 4px 10px;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            background: transparent;
+            color: var(--muted);
+            font-family: var(--font);
+            font-size: 12px;
+            cursor: pointer;
+        }
+        .error-actions button:hover { color: var(--text); border-color: var(--muted); }
+        .error-actions button.danger:hover { color: var(--error); border-color: var(--error); }
+
+        .stack-trace {
+            margin-top: 10px;
+            padding: 10px;
+            background: var(--bg);
+            border-radius: 6px;
+            font-family: var(--mono);
+            font-size: 12px;
+            white-space: pre-wrap;
+            word-break: break-all;
+            color: var(--muted);
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        /* deploy timeline */
+        .deploy-entry {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 14px 16px;
+            margin-bottom: 8px;
+        }
+        .deploy-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .deploy-header .actor { font-weight: 500; font-size: 14px; }
+        .deploy-meta {
+            margin-top: 6px;
+            font-size: 12px;
+            color: var(--muted);
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .deploy-msg {
+            margin-top: 4px;
+            font-size: 13px;
+            color: var(--text);
+        }
+
+        /* pagination */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 16px;
+        }
+        .pagination button {
+            padding: 6px 14px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: transparent;
+            color: var(--muted);
+            font-family: var(--font);
+            font-size: 13px;
+            cursor: pointer;
+        }
+        .pagination button:hover { color: var(--text); border-color: var(--muted); }
+        .pagination button:disabled { opacity: 0.3; cursor: not-allowed; }
+        .pagination span {
+            padding: 6px 10px;
+            font-size: 13px;
+            color: var(--muted);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 48px;
+            color: var(--muted);
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+
+<!-- ── Login View ──────────────────────────────────────────── -->
+<div id="login-view">
+    <div class="login-card">
+        <h1>Evven Ops</h1>
+        <div id="login-error" class="login-error"></div>
+        <form id="login-form">
+            <input type="text" id="login-username" placeholder="Username" autocomplete="username" />
+            <input type="password" id="login-password" placeholder="Password" autocomplete="current-password" />
+            <button type="submit">Sign in</button>
+        </form>
+    </div>
+</div>
+
+<!-- ── Main View ───────────────────────────────────────────── -->
+<div id="main-view">
+    <div class="header">
+        <h1>Evven Ops</h1>
+        <button id="logout-btn">Logout</button>
+    </div>
+    <div class="tabs">
+        <div class="tab active" data-tab="errors">Errors</div>
+        <div class="tab" data-tab="deploys">Deploys</div>
+    </div>
+    <div class="content">
+
+        <!-- Errors Panel -->
+        <div id="panel-errors" class="tab-panel active">
+            <div class="filter-bar">
+                <select id="filter-type">
+                    <option value="">All types</option>
+                </select>
+                <select id="filter-status">
+                    <option value="all">All status</option>
+                    <option value="open">Open</option>
+                    <option value="resolved">Resolved</option>
+                </select>
+                <select id="filter-app">
+                    <option value="">All apps</option>
+                    <option value="web">Web</option>
+                    <option value="mobile">Mobile</option>
+                </select>
+                <input type="text" id="filter-search" placeholder="Search message or route..." />
+            </div>
+            <div id="errors-list"></div>
+            <div id="errors-pagination" class="pagination"></div>
+        </div>
+
+        <!-- Deploys Panel -->
+        <div id="panel-deploys" class="tab-panel">
+            <div id="deploys-list"></div>
+            <div id="deploys-pagination" class="pagination"></div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+(function () {
+    'use strict';
+
+    var errorsPage = 1;
+    var deploysPage = 1;
+
+    // ── helpers ───────────────────────────────────────────────
+    function escapeHtml(str) {
+        if (!str) return '';
+        var div = document.createElement('div');
+        div.appendChild(document.createTextNode(str));
+        return div.innerHTML;
+    }
+
+    function timeAgo(dateStr) {
+        var now = new Date();
+        var date = new Date(dateStr);
+        var seconds = Math.floor((now - date) / 1000);
+        if (seconds < 60) return seconds + 's ago';
+        var minutes = Math.floor(seconds / 60);
+        if (minutes < 60) return minutes + 'm ago';
+        var hours = Math.floor(minutes / 60);
+        if (hours < 24) return hours + 'h ago';
+        var days = Math.floor(hours / 24);
+        return days + 'd ago';
+    }
+
+    function escapeAttr(str) {
+        if (!str) return '';
+        return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
+    function buildGithubUrl(app, sha) {
+        var repo = app === 'frontend' ? 'Evven-web' : 'Evven-backend';
+        return 'https://github.com/Evven-hq/' + repo + '/commit/' + escapeAttr(sha);
+    }
+
+    function request(url, opts) {
+        opts = opts || {};
+        opts.credentials = 'same-origin';
+        return fetch(url, opts).then(function (res) {
+            if (res.status === 204) return null;
+            return res.json().then(function (data) {
+                if (!res.ok) throw { status: res.status, data: data };
+                return data;
+            });
+        });
+    }
+
+    // ── auth check ────────────────────────────────────────────
+    function checkAuth() {
+        request('/ops/api/me').then(function (data) {
+            if (data && data.authenticated) {
+                document.getElementById('login-view').style.display = 'none';
+                document.getElementById('main-view').style.display = 'block';
+                loadErrors();
+                loadDeploys();
+            }
+        }).catch(function () {
+            document.getElementById('login-view').style.display = 'flex';
+            document.getElementById('main-view').style.display = 'none';
+        });
+    }
+
+    // ── login ─────────────────────────────────────────────────
+    document.getElementById('login-form').addEventListener('submit', function (e) {
+        e.preventDefault();
+        var errEl = document.getElementById('login-error');
+        errEl.style.display = 'none';
+
+        var username = document.getElementById('login-username').value;
+        var password = document.getElementById('login-password').value;
+
+        request('/ops/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username: username, password: password })
+        }).then(function () {
+            checkAuth();
+        }).catch(function (err) {
+            if (err && err.status === 429) {
+                errEl.textContent = 'Too many attempts. Try again later.';
+            } else {
+                errEl.textContent = 'Invalid credentials.';
+            }
+            errEl.style.display = 'block';
+        });
+    });
+
+    // ── logout ────────────────────────────────────────────────
+    document.getElementById('logout-btn').addEventListener('click', function () {
+        request('/ops/logout', { method: 'POST' }).then(function () {
+            location.reload();
+        });
+    });
+
+    // ── tabs ──────────────────────────────────────────────────
+    document.querySelectorAll('.tab').forEach(function (tab) {
+        tab.addEventListener('click', function () {
+            document.querySelectorAll('.tab').forEach(function (t) { t.classList.remove('active'); });
+            document.querySelectorAll('.tab-panel').forEach(function (p) { p.classList.remove('active'); });
+            tab.classList.add('active');
+            document.getElementById('panel-' + tab.getAttribute('data-tab')).classList.add('active');
+        });
+    });
+
+    // ── errors ────────────────────────────────────────────────
+    function loadErrors() {
+        var typeVal = document.getElementById('filter-type').value;
+        var statusVal = document.getElementById('filter-status').value;
+        var appVal = document.getElementById('filter-app').value;
+        var searchVal = document.getElementById('filter-search').value;
+
+        var params = new URLSearchParams();
+        params.set('page', errorsPage);
+        params.set('page_size', '25');
+        if (typeVal) params.set('error_type', typeVal);
+        if (statusVal !== 'all') params.set('status_filter', statusVal);
+        if (appVal) params.set('app', appVal);
+        if (searchVal) params.set('q', searchVal);
+
+        request('/ops/api/errors?' + params.toString()).then(function (data) {
+            renderErrors(data);
+        }).catch(function () {
+            document.getElementById('errors-list').innerHTML = '<div class="empty-state">Failed to load errors.</div>';
+        });
+    }
+
+    function renderErrors(data) {
+        var list = document.getElementById('errors-list');
+        if (!data.items || data.items.length === 0) {
+            list.innerHTML = '<div class="empty-state">No errors found.</div>';
+            document.getElementById('errors-pagination').innerHTML = '';
+            return;
+        }
+
+        var html = '';
+        for (var i = 0; i < data.items.length; i++) {
+            var item = data.items[i];
+            var isResolved = item.resolved_at !== null;
+            html += '<div class="error-row" data-id="' + escapeAttr(item.id) + '">';
+            html += '<div class="error-row-header">';
+            html += '<span class="msg">' + escapeHtml(item.message) + '</span>';
+            if (item.error_type) html += '<span class="badge badge-type">' + escapeHtml(item.error_type) + '</span>';
+            html += '<span class="badge badge-app">' + escapeHtml(item.app) + '</span>';
+            html += '<span class="badge ' + (isResolved ? 'badge-resolved' : 'badge-open') + '">' + (isResolved ? 'Resolved' : 'Open') + '</span>';
+            html += '</div>';
+            html += '<div class="error-meta">';
+            if (item.user_email) html += '<span>' + escapeHtml(item.user_email) + '</span>';
+            if (item.route) html += '<span>' + escapeHtml(item.method || '') + ' ' + escapeHtml(item.route) + '</span>';
+            if (item.version) html += '<span>v' + escapeHtml(item.version) + '</span>';
+            html += '<span>' + timeAgo(item.created_at) + '</span>';
+            html += '</div>';
+            html += '<div class="error-actions">';
+            html += '<button onclick="window.__toggleResolve(\'' + escapeAttr(item.id) + '\', ' + isResolved + ')">' + (isResolved ? 'Reopen' : 'Resolve') + '</button>';
+            html += '<button class="danger" onclick="window.__deleteError(\'' + escapeAttr(item.id) + '\')">Delete</button>';
+            html += '</div>';
+            if (item.stack_trace) {
+                html += '<details><summary style="font-size:12px;color:var(--muted);margin-top:8px;cursor:pointer">Stack trace</summary><div class="stack-trace">' + escapeHtml(item.stack_trace) + '</div></details>';
+            }
+            html += '</div>';
+        }
+        list.innerHTML = html;
+
+        renderPagination('errors', data.page, data.total, data.page_size);
+    }
+
+    window.__toggleResolve = function (id, isResolved) {
+        var endpoint = isResolved ? '/ops/api/errors/' + id + '/reopen' : '/ops/api/errors/' + id + '/resolve';
+        request(endpoint, { method: 'POST' }).then(function () {
+            loadErrors();
+        });
+    };
+
+    window.__deleteError = function (id) {
+        if (!confirm('Delete this error?')) return;
+        request('/ops/api/errors/' + id, { method: 'DELETE' }).then(function () {
+            loadErrors();
+        });
+    };
+
+    // ── deploys ───────────────────────────────────────────────
+    function loadDeploys() {
+        var params = new URLSearchParams();
+        params.set('page', deploysPage);
+        params.set('page_size', '50');
+
+        request('/ops/api/deploys?' + params.toString()).then(function (data) {
+            renderDeploys(data);
+        }).catch(function () {
+            document.getElementById('deploys-list').innerHTML = '<div class="empty-state">Failed to load deploys.</div>';
+        });
+    }
+
+    function renderDeploys(data) {
+        var list = document.getElementById('deploys-list');
+        if (!data.items || data.items.length === 0) {
+            list.innerHTML = '<div class="empty-state">No deploys found.</div>';
+            document.getElementById('deploys-pagination').innerHTML = '';
+            return;
+        }
+
+        var html = '';
+        for (var i = 0; i < data.items.length; i++) {
+            var item = data.items[i];
+            var appLabel = item.app === 'frontend' ? 'Frontend' : 'Backend';
+            html += '<div class="deploy-entry">';
+            html += '<div class="deploy-header">';
+            html += '<span class="badge badge-app">' + escapeHtml(appLabel) + '</span>';
+            html += '<span class="actor">' + escapeHtml(item.actor) + '</span>';
+            html += '</div>';
+            html += '<div class="deploy-meta">';
+            html += '<span>commit <a href="' + buildGithubUrl(item.app, item.commit_sha) + '" target="_blank" rel="noopener">' + escapeHtml(item.commit_sha.substring(0, 7)) + '</a></span>';
+            html += '<span>' + escapeHtml(item.environment) + '</span>';
+            html += '<span>' + timeAgo(item.pushed_at) + '</span>';
+            html += '</div>';
+            if (item.commit_message) {
+                html += '<div class="deploy-msg">' + escapeHtml(item.commit_message) + '</div>';
+            }
+            html += '</div>';
+        }
+        list.innerHTML = html;
+
+        renderPagination('deploys', data.page, data.total, data.page_size);
+    }
+
+    // ── pagination ────────────────────────────────────────────
+    function renderPagination(section, page, total, pageSize) {
+        var totalPages = Math.ceil(total / pageSize);
+        var container = document.getElementById(section + '-pagination');
+        if (totalPages <= 1) { container.innerHTML = ''; return; }
+
+        var html = '';
+        html += '<button ' + (page <= 1 ? 'disabled' : '') + ' onclick="window.__prevPage(\'' + section + '\')">Prev</button>';
+        html += '<span>' + page + ' / ' + totalPages + '</span>';
+        html += '<button ' + (page >= totalPages ? 'disabled' : '') + ' onclick="window.__nextPage(\'' + section + '\')">Next</button>';
+        container.innerHTML = html;
+    }
+
+    window.__prevPage = function (section) {
+        if (section === 'errors') { errorsPage--; loadErrors(); }
+        else { deploysPage--; loadDeploys(); }
+    };
+
+    window.__nextPage = function (section) {
+        if (section === 'errors') { errorsPage++; loadErrors(); }
+        else { deploysPage++; loadDeploys(); }
+    };
+
+    // ── filter listeners ──────────────────────────────────────
+    ['filter-type', 'filter-status', 'filter-app'].forEach(function (id) {
+        document.getElementById(id).addEventListener('change', function () {
+            errorsPage = 1;
+            loadErrors();
+        });
+    });
+
+    var searchTimer;
+    document.getElementById('filter-search').addEventListener('input', function () {
+        clearTimeout(searchTimer);
+        searchTimer = setTimeout(function () {
+            errorsPage = 1;
+            loadErrors();
+        }, 300);
+    });
+
+    // ── init ──────────────────────────────────────────────────
+    checkAuth();
+})();
+</script>
+
+</body>
+</html>

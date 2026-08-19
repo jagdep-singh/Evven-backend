@@ -40,7 +40,15 @@ async def get_current_user(
 
     repo = UserRepository(db)
 
-    user = await repo.get_user_by_id(UUID(user_id))
+    try:
+        user_uuid = UUID(user_id)
+    except (ValueError, AttributeError):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token payload",
+        )
+
+    user = await repo.get_user_by_id(user_uuid)
 
     if not user or not user.is_active or not user.is_verified:
         raise HTTPException(
@@ -48,3 +56,42 @@ async def get_current_user(
             detail="Inactive, unverified, or invalid user",
         )
     return user
+
+
+# ops logging — optional auth for error ingestion
+security_optional = HTTPBearer(auto_error=False)
+
+
+async def get_current_user_optional(
+    credentials: HTTPAuthorizationCredentials = Depends(security_optional),
+    db: AsyncSession = Depends(get_db),
+):
+    if not credentials:
+        return None
+
+    token = credentials.credentials
+    payload = decode_token(token, expected_type="access")
+
+    if not payload:
+        return None
+
+    user_id = payload.get("sub")
+    if not user_id:
+        return None
+
+    repo = UserRepository(db)
+
+    try:
+        user_uuid = UUID(user_id)
+    except (ValueError, AttributeError):
+        return None
+
+    user = await repo.get_user_by_id(user_uuid)
+
+    if not user or not user.is_active or not user.is_verified:
+        return None
+
+    return user
+
+
+# end ops logging

@@ -1,4 +1,5 @@
 import logging
+import os
 
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
@@ -7,7 +8,9 @@ from fastapi.openapi.docs import get_redoc_html, get_swagger_ui_html
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
+# ops logging
 from core.exceptions import AppError
+from ops.routes import deploys_router, errors_router, ops_router
 from routes.auth import router as auth_router
 from routes.balances import router as balance_router
 from routes.debt_breakdown import router as debt_breakdown_router
@@ -18,6 +21,8 @@ from routes.groups import router as groups_router
 from routes.personal_expenses import router as personal_expenses_router
 from routes.settlements import router as settlement_router
 from routes.users import router as users_router
+
+# end ops logging
 
 app = FastAPI(
     title="Evven API",
@@ -83,6 +88,43 @@ app.include_router(debt_breakdown_router)
 app.include_router(balance_router)
 app.include_router(settlement_router)
 app.include_router(friends_router)
+
+# ops logging
+app.include_router(errors_router)
+app.include_router(deploys_router)
+app.include_router(ops_router)
+# end ops logging
+
+
+# ops logging — security headers
+@app.middleware("http")
+async def security_headers_middleware(request: Request, call_next):
+    response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+
+    is_prod = os.getenv("ENVIRONMENT") == "production"
+    if is_prod:
+        response.headers["Strict-Transport-Security"] = (
+            "max-age=63072000; includeSubDomains"
+        )
+
+    if request.url.path.startswith("/ops"):
+        response.headers["Content-Security-Policy"] = (
+            "default-src 'none'; "
+            "script-src 'self' 'unsafe-inline'; "
+            "style-src 'self' 'unsafe-inline'; "
+            "font-src 'self' https://fonts.gstatic.com https://api.fontshare.com; "
+            "img-src 'self'; "
+            "connect-src 'self'; "
+            "frame-ancestors 'none'"
+        )
+
+    return response
+
+
+# end ops logging
 
 
 @app.get("/health")
