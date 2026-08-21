@@ -1,5 +1,6 @@
 import logging
 import os
+import uuid
 
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
@@ -166,7 +167,15 @@ async def validation_error_handler(request: Request, exc: RequestValidationError
 
 @app.exception_handler(Exception)
 async def exception_error_handler(request: Request, exc: Exception):
+    error_id = uuid.uuid4()
+    logger.error(
+        "500 error_id=%s method=%s path=%s",
+        error_id,
+        request.method,
+        request.url.path,
+        exc_info=exc,
+    )
     return JSONResponse(
         status_code=500,
-        content={"detail": "Internal Server Error"},
+        content={"detail": "Internal Server Error", "error_id": str(error_id)},
     )
